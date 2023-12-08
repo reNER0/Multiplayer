@@ -1,0 +1,207 @@
+using Assets.Scripts.Network;
+using Assets.Scripts.Network.Commands;
+using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading.Tasks;
+using UnityEngine;
+using UnityEngine.Windows;
+
+public class ServerHub : Hub
+{
+    private void Awake()
+    {
+#if !UNITY_SERVER
+        return;
+#endif
+
+        NetworkBus.OnCommandSendToClient += SendCommandToClient;
+        NetworkBus.OnCommandSendToClients += SendCommandToAllClients;
+
+        ConnectingClientsLoopTask();
+    }
+
+
+    private async Task ConnectingClientsLoopTask()
+    {
+        var tcpListener = new TcpListener(IPAddress.Any, _port);
+        tcpListener.Start();
+
+        while (true)
+        {
+            try
+            {
+                var client = await tcpListener.AcceptTcpClientAsync();
+                client.NoDelay = true;
+                Console.WriteLine("The delay was set successfully to " + client.NoDelay.ToString());
+                client.ReceiveBufferSize = 16384;
+                client.SendBufferSize = 16384;
+
+                AddNewClient(client);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+        }
+    }
+
+    private void AddNewClient(TcpClient client)
+    {
+        var availableId = NetworkRepository.ConnectedClients.Count;
+
+        var connectedClient = new NetworkClient
+        {
+            ClientId = availableId,
+            Client = client,
+            StreamReader = new StreamReader(client.GetStream()),
+            StreamWriter = new StreamWriter(client.GetStream()),
+        };
+
+        connectedClient.StreamWriter.AutoFlush = true;
+
+        const string FMT = "O";
+        DateTime now1 = NetworkSettings.ServerStartupTime;
+        string strDate = now1.ToString(FMT);
+        var initCmd = new InitClientCmd(availableId, strDate, NetworkSettings.CurrentTick);
+
+        Debug.LogError($"Server Utc: {now1}");
+        Debug.LogError($"Tick: {NetworkSettings.CurrentTick}");
+
+        SendCommandToClient(initCmd, connectedClient);
+
+        foreach (var cmd in ServerRepository.GetCommands().Where(x => x.GetType().Equals(typeof(SpawnCmd))))
+        {
+            SendCommandToClient(cmd, connectedClient);
+        }
+
+        NetworkRepository.ConnectedClients.Add(connectedClient);
+
+        CreateNetworkObject(connectedClient);
+        CreateServerObject(connectedClient);
+
+        ClientReadingTask(connectedClient);
+
+        Debug.Log($"{client.Client.RemoteEndPoint} connected!");
+
+        NetworkBus.OnClientConnected?.Invoke(connectedClient);
+    }
+
+    private void CreateNetworkObject(NetworkClient client)
+    {
+        var spawnPosition = client.ClientId == 0 ? Vector3.left : Vector3.right;
+        var spawnCmd = new SpawnCmd("Player", client.ClientId, spawnPosition, Quaternion.identity);
+
+        PerformCommand(spawnCmd);
+
+        if (client.ClientId == 1)
+            CreateBall();
+    }
+
+    private void CreateServerObject(NetworkClient client)
+    {
+        var spawnPosition = (client.ClientId == 0 ? Vector3.left : Vector3.right ) + Vector3.forward * 2;
+        var spawnCmd = new SpawnCmd("Player", -1, spawnPosition, Quaternion.identity);
+
+        PerformCommand(spawnCmd);
+
+        if (client.ClientId == 1)
+            CreateBall();
+    }
+    private void CreateBall()
+    {
+        return;
+        var ballCmd = new SpawnCmd("Ball", -1, Vector3.up * 3, Quaternion.identity);
+
+        PerformCommand(ballCmd);
+
+        //NetworkBus.OnPredictableSpawned?.Invoke(NetworkRepository.NetworkObjectById.Select(x => x.Value).FirstOrDefault(x => x.OwnerId == -1).GameObject);
+    }
+
+    private async Task ClientReadingTask(NetworkClient client)
+    {
+        while (true)
+        {
+            if (client.Client.Connected == false)
+            {
+                NetworkBus.OnClientDisconnected?.Invoke(client);
+                NetworkRepository.ConnectedClients.Remove(client);
+                Debug.LogError("Disconnected player: " + client.ClientId);
+                return;
+            }
+
+            var data = await client.StreamReader.ReadLineAsync();
+
+            var cmd = StringToCommand(data);
+
+            PerformCommand(cmd);
+        }
+    }
+
+    public async Task PerformCommand(ICommand cmd)
+    {
+        try
+        {
+            cmd.Execute();
+
+            if (publicCommandTypes.Contains(cmd.GetType()))
+                SendCommandToAllClients(cmd);
+
+            ServerRepository.AddCommandInCommandsTimeline(cmd);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error while performing command on server: {e}");
+        }
+    }
+
+    public void SendCommandToClient(ICommand cmd, NetworkClient client)
+    {
+        var data = CommandToString(cmd);
+
+        client.StreamWriter.WriteLine(data);
+        client.StreamWriter.Flush();
+    }
+
+    public void SendCommandToAllClients(ICommand cmd)
+    {
+        foreach (var client in NetworkRepository.ConnectedClients)
+        {
+            SendCommandToClient(cmd, client);
+        }
+    }
+
+    public void SendCommandToAllClientsExcept(ICommand cmd, NetworkClient exceptClient)
+    {
+        foreach (var client in NetworkRepository.ConnectedClients)
+        {
+            if (client.ClientId == exceptClient.ClientId)
+                continue;
+
+            SendCommandToClient(cmd, client);
+        }
+    }
+
+    public void DisconnectClient(NetworkClient client)
+    {
+        client.Client.Close();
+    }
+
+    public void DisconnectAllClients()
+    {
+        foreach (var client in NetworkRepository.ConnectedClients)
+        {
+            DisconnectClient(client);
+        }
+    }
+
+    public void Dispose()
+    {
+        DisconnectAllClients();
+
+        NetworkBus.OnCommandSendToClient -= SendCommandToClient;
+        NetworkBus.OnCommandSendToClients -= SendCommandToAllClients;
+    }
+}

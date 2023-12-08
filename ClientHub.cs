@@ -1,0 +1,174 @@
+using Assets.Scripts.Network.Commands;
+using Assets.Scripts.Network;
+using System;
+using System.IO;
+using System.Linq;
+using System.Net.Sockets;
+using UnityEngine;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using System.Threading;
+using ThreadPriority = System.Threading.ThreadPriority;
+
+public class ClientHub : Hub
+{
+    private static TcpClient client;
+    private static StreamReader _streamReader;
+    private static StreamWriter _streamWriter;
+
+    private DateTime lastPingTime = DateTime.Now;
+
+
+
+    private Thread _serverListenerThread;
+    private ConcurrentQueue<ICommand> _cmds = new();
+    private bool _disposed = false;
+
+
+
+    private void Awake()
+    {
+#if UNITY_SERVER
+        return;
+#endif
+
+        ConnectClient();
+
+        NetworkBus.OnPerformCommand += PerformCommand;
+        NetworkBus.OnCommandSendToServer += SendCommandToServer;
+
+        NetworkBus.OnPongReceived += SendPing;
+
+        Application.runInBackground = true;
+    }
+
+    public async void PerformCommand(ICommand cmd)
+    {
+        await Task.Delay(80);
+
+        cmd.Execute();
+    }
+
+    public void SendCommandToServer(ICommand cmd)
+    {
+        var data = CommandToString(cmd);
+
+        _streamWriter.WriteLine(data);
+        _streamWriter.Flush();
+    }
+
+    private async Task ConnectClient()
+    {
+        while (true)
+        {
+            try
+            {
+                client = new TcpClient();
+                client.NoDelay = true;
+                client.ReceiveBufferSize = 16384;
+                client.SendBufferSize = 16384;
+
+                await client.ConnectAsync(NetworkSettings.ServerIP, _port);
+
+                _streamReader = new StreamReader(client.GetStream());
+                _streamWriter = new StreamWriter(client.GetStream());
+
+                _streamWriter.AutoFlush = true;
+
+                // Create client loop thread here
+
+                _serverListenerThread = new Thread(ListenServerLoop)
+                {
+                    IsBackground = true,
+                    Priority = ThreadPriority.AboveNormal,
+                };
+                _serverListenerThread.Start();
+
+                return;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+                return;
+            }
+        }
+    }
+
+    private void ProcessCmds()
+    {
+        while (_cmds.Any())
+        {
+            try
+            {
+                _cmds.TryDequeue(out var command);
+
+                PerformCommand(command);
+            }
+            catch(Exception e) 
+            {
+                Debug.LogError(e.Message);
+            }
+        }
+    }
+
+    private async void ListenServerLoop()
+    {
+        SendPing();
+
+        while (!_disposed)
+        {
+            try
+            {
+                if (client?.Connected == true)
+                {
+                    var data = await _streamReader.ReadLineAsync();
+
+                    var cmd = StringToCommand(data);
+                    _cmds.Enqueue(cmd);
+                }
+                else
+                {
+                    Debug.LogError("Client disconnected!");
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+
+                return;
+            }
+        }
+    }
+
+    private async void SendPing()
+    {
+        var ping = (DateTime.Now - lastPingTime).TotalMilliseconds;
+        UIBus.OnPingUpdate?.Invoke((int)ping);
+
+        // Delay between pings;
+        await Task.Delay(500);
+
+        lastPingTime = DateTime.Now;
+        SendCommandToServer(new PingCmd(NetworkRepository.CurrentCliendId));
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+
+        NetworkBus.OnPerformCommand -= PerformCommand;
+        NetworkBus.OnCommandSendToServer -= SendCommandToServer;
+
+        NetworkBus.OnPongReceived -= SendPing;
+
+        client?.Dispose();
+        _streamReader?.Dispose();
+        _streamWriter?.Dispose();
+    }
+
+    public void Update()
+    {
+        ProcessCmds();
+    }
+}
