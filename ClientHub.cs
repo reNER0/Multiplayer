@@ -29,6 +29,7 @@ public class ClientHub : Hub
     private void Awake()
     {
 #if UNITY_SERVER
+        Destroy(gameObject);
         return;
 #endif
 
@@ -44,8 +45,6 @@ public class ClientHub : Hub
 
     public async void PerformCommand(ICommand cmd)
     {
-        await Task.Delay(80);
-
         cmd.Execute();
     }
 
@@ -63,6 +62,8 @@ public class ClientHub : Hub
         {
             try
             {
+                Debug.Log("Starting client socket");
+
                 client = new TcpClient();
                 client.NoDelay = true;
                 client.ReceiveBufferSize = 16384;
@@ -128,7 +129,7 @@ public class ClientHub : Hub
                 }
                 else
                 {
-                    Debug.LogError("Client disconnected!");
+                    Debug.Log("Client disconnected!");
                     return;
                 }
             }

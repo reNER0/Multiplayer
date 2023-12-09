@@ -14,6 +14,7 @@ public class ServerHub : Hub
     private void Awake()
     {
 #if !UNITY_SERVER
+        Destroy(gameObject);
         return;
 #endif
 
@@ -26,6 +27,8 @@ public class ServerHub : Hub
 
     private async Task ConnectingClientsLoopTask()
     {
+        Debug.Log("Starting server socket");
+
         var tcpListener = new TcpListener(IPAddress.Any, _port);
         tcpListener.Start();
 
@@ -67,8 +70,8 @@ public class ServerHub : Hub
         string strDate = now1.ToString(FMT);
         var initCmd = new InitClientCmd(availableId, strDate, NetworkSettings.CurrentTick);
 
-        Debug.LogError($"Server Utc: {now1}");
-        Debug.LogError($"Tick: {NetworkSettings.CurrentTick}");
+        Debug.Log($"Server Utc: {now1}");
+        Debug.Log($"Tick: {NetworkSettings.CurrentTick}");
 
         SendCommandToClient(initCmd, connectedClient);
 
@@ -79,9 +82,6 @@ public class ServerHub : Hub
 
         NetworkRepository.ConnectedClients.Add(connectedClient);
 
-        CreateNetworkObject(connectedClient);
-        CreateServerObject(connectedClient);
-
         ClientReadingTask(connectedClient);
 
         Debug.Log($"{client.Client.RemoteEndPoint} connected!");
@@ -89,27 +89,6 @@ public class ServerHub : Hub
         NetworkBus.OnClientConnected?.Invoke(connectedClient);
     }
 
-    private void CreateNetworkObject(NetworkClient client)
-    {
-        var spawnPosition = client.ClientId == 0 ? Vector3.left : Vector3.right;
-        var spawnCmd = new SpawnCmd("Player", client.ClientId, spawnPosition, Quaternion.identity);
-
-        PerformCommand(spawnCmd);
-
-        if (client.ClientId == 1)
-            CreateBall();
-    }
-
-    private void CreateServerObject(NetworkClient client)
-    {
-        var spawnPosition = (client.ClientId == 0 ? Vector3.left : Vector3.right ) + Vector3.forward * 2;
-        var spawnCmd = new SpawnCmd("Player", -1, spawnPosition, Quaternion.identity);
-
-        PerformCommand(spawnCmd);
-
-        if (client.ClientId == 1)
-            CreateBall();
-    }
     private void CreateBall()
     {
         return;

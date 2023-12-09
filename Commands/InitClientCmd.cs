@@ -31,9 +31,9 @@ namespace Assets.Scripts.Network.Commands
             NetworkRepository.SetClientId(_clientId);
             NetworkBus.OnPongReceived?.Invoke();
 
-            Debug.LogError($"Init cmd: {_clientId}");
-            Debug.LogError($"Received Server Utc: {now2}");
-            Debug.LogError($"Tick: {NetworkSettings.CurrentTick}");
+            Debug.Log($"Init cmd: {_clientId}");
+            Debug.Log($"Received Server Utc: {now2}");
+            Debug.Log($"Tick: {NetworkSettings.CurrentTick}");
         }
     }
 }

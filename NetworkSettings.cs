@@ -3,7 +3,7 @@ using UnityEngine;
 
 public static class NetworkSettings
 {
-    public static readonly string ServerIP = "178.205.98.73";
+    public static readonly string ServerIP = "localhost";
     public static readonly float SyncForce = 8f;
     public static readonly float MaximumError = 0.1f;
     public static readonly float MaximumPingInTicks = 200;
