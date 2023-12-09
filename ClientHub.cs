@@ -144,7 +144,7 @@ public class ClientHub : Hub
     private async void SendPing()
     {
         var ping = (DateTime.Now - lastPingTime).TotalMilliseconds;
-        UIBus.OnPingUpdate?.Invoke((int)ping);
+        NetworkBus.OnPingUpdated?.Invoke((int)ping);
 
         // Delay between pings;
         await Task.Delay(500);

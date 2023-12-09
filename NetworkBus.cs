@@ -16,4 +16,5 @@ public static class NetworkBus
     public static Action<Predictable> OnPredictableSpawned;
 
     public static Action OnPongReceived;
+    public static Action<int> OnPingUpdated;
 }

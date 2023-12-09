@@ -68,7 +68,7 @@ namespace Assets.Scripts.Network
                 if (input == null)
                     continue;
 
-                objectInputPair.Key.Input(objectInputPair.Value);
+                //objectInputPair.Key.Input(objectInputPair.Value);
             }
 
             Physics.Simulate(Time.fixedDeltaTime);
@@ -77,7 +77,7 @@ namespace Assets.Scripts.Network
             {
                 var objectId = NetworkRepository.GetGameObjectsId(rigidBody.gameObject);
 
-                var syncCmd = new SyncRigidbodyCmd(
+                /*var syncCmd = new SyncRigidbodyCmd(
                     objectId,
                     rigidBody.Rigidbody.position,
                     rigidBody.Rigidbody.velocity,
@@ -86,7 +86,7 @@ namespace Assets.Scripts.Network
                     tick
                     );
 
-                NetworkBus.OnCommandSendToClients(syncCmd);
+                NetworkBus.OnCommandSendToClients(syncCmd);*/
             }
 
             foreach (var objectInputsPair in objectInputsPairs)

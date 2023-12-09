@@ -9,18 +9,12 @@ namespace Assets.Scripts.Network.Commands
         [SerializeField]
         private int ObjectId;
         [SerializeField]
-        private float X;
-        [SerializeField]
-        private float Y;
-        [SerializeField]
-        private int Tick;
+        private PlayerInputs playerInputs;
 
-        public InputCmd(int objectId, float x, float y, int tick)
+        public InputCmd(int objectId, PlayerInputs playerInputs)
         {
             ObjectId = objectId;
-            X = x;
-            Y = y;
-            Tick = tick;
+            this.playerInputs = playerInputs;
         }
 
         public void Execute()
@@ -30,9 +24,9 @@ namespace Assets.Scripts.Network.Commands
             if (predictable == null)
                 return;
 
-            var input = new PlayerInputs() { X = X, Y = Y, Tick = Tick };
+            //var input = new PlayerInputs() { X = X, Y = Y, Tick = Tick };
 
-            InputProcessor.AddInput(predictable, input);
+            InputProcessor.AddInput(predictable, playerInputs);
         }
     }
 }

@@ -40,7 +40,7 @@ namespace Assets.Scripts.Network.Commands
             if (predictable == null)
                 return;
 
-            predictable.Reconcilate(new RigidbodyState(tick, position, velocity, rotation, rotationVelocity));
+            //predictable.Reconcilate(new RigidbodyState(tick, position, velocity, rotation, rotationVelocity));
         }
     }
 }
