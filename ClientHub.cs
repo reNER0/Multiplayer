@@ -29,7 +29,6 @@ public class ClientHub : Hub
     private void Awake()
     {
 #if UNITY_SERVER
-        Destroy(gameObject);
         return;
 #endif
 

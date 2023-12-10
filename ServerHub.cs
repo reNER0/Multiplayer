@@ -14,7 +14,6 @@ public class ServerHub : Hub
     private void Awake()
     {
 #if !UNITY_SERVER
-        Destroy(gameObject);
         return;
 #endif
 
