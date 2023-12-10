@@ -151,7 +151,8 @@ public class ClientHub : Hub
         await Task.Delay(500);
 
         lastPingTime = DateTime.Now;
-        SendCommandToServer(new PingCmd(NetworkRepository.CurrentCliendId));
+        SendCommandToServer(new PingCmd());
+        SendCommandToServer(new InputCmd(new PlayerInputs(1,1,0)));
     }
 
     public void Dispose()

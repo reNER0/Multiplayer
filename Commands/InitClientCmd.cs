@@ -8,30 +8,30 @@ namespace Assets.Scripts.Network.Commands
     public class InitClientCmd : SerializableClass, ICommand
     {
         [SerializeField]
-        private int _clientId;
+        private int newClientId;
         [SerializeField]
-        private int _tick;
+        private int tick;
         [SerializeField]
-        private string _serverUnixStartupTime;
+        private string serverUnixStartupTime;
 
-        public InitClientCmd(int clientId, string serverUnixStartupTime, int tick)
+        public InitClientCmd(int newClientId, string serverUnixStartupTime, int tick)
         {
-            _clientId = clientId;
-            _serverUnixStartupTime = serverUnixStartupTime;
-            _tick = tick;
+            this.newClientId = newClientId;
+            this.serverUnixStartupTime = serverUnixStartupTime;
+            this.tick = tick;
         }
 
         public void Execute()
         {
             const string FMT = "O";
-            DateTime now2 = DateTime.ParseExact(_serverUnixStartupTime, FMT, CultureInfo.InvariantCulture);
+            DateTime now2 = DateTime.ParseExact(serverUnixStartupTime, FMT, CultureInfo.InvariantCulture);
 
             NetworkSettings.SetAppDeltaTimeTime(now2);
-            NetworkSettings.SetDeltaTick(_tick);
-            NetworkRepository.SetClientId(_clientId);
+            NetworkSettings.SetDeltaTick(tick);
+            NetworkRepository.SetClientId(newClientId);
             NetworkBus.OnPongReceived?.Invoke();
 
-            Debug.Log($"Init cmd: {_clientId}");
+            Debug.Log($"Init cmd: {newClientId}");
             Debug.Log($"Received Server Utc: {now2}");
             Debug.Log($"Tick: {NetworkSettings.CurrentTick}");
         }

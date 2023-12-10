@@ -7,13 +7,16 @@ namespace Assets.Scripts.Network.Commands
     public class SerializableClass
     {
         [SerializeField]
-        private string _serializedClassName;
+        private string serializedClassName;
+        [SerializeField]
+        protected int senderId;
 
         public SerializableClass()
         {
-            _serializedClassName = GetType().ToString();
+            serializedClassName = GetType().ToString();
+            senderId = NetworkRepository.CurrentCliendId;
         }
 
-        public string ClassName => _serializedClassName;
+        public string ClassName => serializedClassName;
     }
 }

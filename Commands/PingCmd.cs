@@ -7,17 +7,9 @@ namespace Assets.Scripts.Network.Commands
     [Serializable]
     public class PingCmd : SerializableClass, ICommand
     {
-        [SerializeField]
-        private int _clientId;
-
-        public PingCmd(int clientId)
-        {
-            _clientId = clientId;
-        }
-
         public void Execute()
         {
-            var client = NetworkRepository.ConnectedClients.First(x => x.ClientId == _clientId);
+            var client = NetworkRepository.ConnectedClients.First(x => x.ClientId == senderId);
 
             if (client == null)
                 return;
