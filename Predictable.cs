@@ -4,13 +4,99 @@ using UnityEngine;
 
 public abstract class Predictable : MonoBehaviour
 {
-    public PlayerInputs[] InputStates = new PlayerInputs[1024];
-    public RigidbodyState[] PhysicsStates = new RigidbodyState[1024];
+    public PredictableState[] States = new PredictableState[1024];
 
-    public abstract void UpdateState(RigidbodyState state);
-    public abstract void Reconcilate(RigidbodyState state);
+    public PlayerInputs lastAppliedInputs;
+
+    protected virtual void Start()
+    {
+        NetworkBus.OnInputsSetToTick += SetInputByTick;
+        NetworkBus.OnAllStatesSaved += SaveCurrentState;
+
+        NetworkBus.OnPredictableSpawned?.Invoke(this);
+    }
+
+    private void OnDestroy()
+    {
+        NetworkBus.OnInputsSetToTick -= SetInputByTick;
+        NetworkBus.OnAllStatesSaved -= SaveCurrentState;
+    }
+
+    protected virtual void Update()
+    {
+        if (NetworkRepository.IsServer)
+            return;
+
+        if (!NetworkRepository.IsCurrentClientOwnerOfObject(gameObject))
+            return;
+
+        while (NetworkSettings.ProcessTick < NetworkSettings.CurrentTick)
+        {
+            NetworkSettings.ProcessTick++;
+
+            var input = new PlayerInputs(UnityEngine.Input.GetAxis("Horizontal"), UnityEngine.Input.GetAxis("Vertical"), NetworkSettings.ProcessTick);
+
+            Input(input);
+
+            Physics.Simulate(Time.fixedDeltaTime);
+
+            SaveCurrentState(NetworkSettings.ProcessTick);
+
+            NetworkBus.OnCommandSendToServer(new InputCmd(input));
+        }
+    }
+
+
+    public abstract void ApplyState(PredictableState state);
+
+    public abstract PredictableState GetState();
+
     public abstract void Input(PlayerInputs playerInputs);
-    public abstract void SetInputByTick(int tick);
-    public abstract void ApplyState(RigidbodyState state);
+
+    public void Reconcilate(RigidbodyState state)
+    {
+        Debug.LogError("Reconcilating!");
+
+        States[state.Tick % 1024] = state;
+
+        ApplyState(state);
+
+        // return if where no states to reconcilate
+        if (!States.Any(x => x.Tick > state.Tick))
+            return;
+
+        for (int i = state.Tick + 1; i <= NetworkSettings.CurrentTick; i++)
+        {
+            NetworkBus.OnInputsSetToTick?.Invoke(i);
+
+            Physics.Simulate(Time.fixedDeltaTime);
+
+            NetworkBus.OnAllStatesSaved?.Invoke(i);
+        }
+    }
+
     public abstract void SaveCurrentState(int tick);
+
+    public void SetInputByTick(int tick)
+    {
+        var statesWithInputs = States.Where(x => x.Tick <= tick)
+            .Where(x => x.PlayerInputs != null);
+
+        if (statesWithInputs == null)
+            return;
+
+        var lastLocalInputState = statesWithInputs.OrderByDescending(x => x.Tick).First();
+
+        Input(lastLocalInputState.PlayerInputs);
+
+        if (lastLocalInputState.Tick == tick)
+        {
+            lastAppliedInputs = lastLocalInputState.PlayerInputs;
+            return;
+        }
+
+        lastAppliedInputs = null;
+    }
+
+    public abstract void UpdateState(PredictableState serverState);
 }

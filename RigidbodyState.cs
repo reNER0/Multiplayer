@@ -1,15 +1,15 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RigidbodyState
+[Serializable]
+public class RigidbodyState : PredictableState
 {
-    public int Tick { get; private set; }
-    public Vector3 Position { get; private set; }
-    public Vector3 Velocity { get; private set; }
-    public Quaternion Rotation { get; private set; }
-    public Vector3 RotationVelocity { get; private set; }
-    public PlayerInputs PlayerInputs { get; private set; }
+    public Vector3 Position;
+    public Vector3 Velocity;
+    public Quaternion Rotation;
+    public Vector3 RotationVelocity;
 
     public RigidbodyState(int tick, Vector3 position, Vector3 velocity, Quaternion rotation, Vector3 rotationVelocity, PlayerInputs playerInputs)
     {

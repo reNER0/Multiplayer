@@ -7,99 +7,57 @@ using UnityEngine;
 public class PhysicsObject : Predictable
 {
     public Rigidbody Rigidbody;
-    public PlayerInputs lastAppliedInputs;
+    public Transform serverStateTransform;
 
-    private void Start()
+
+    public RigidbodyState[] RigidbodyStates => States as RigidbodyState[];
+
+    protected override void Start()
     {
-        NetworkBus.OnInputsSetToTick += SetInputByTick;
-        NetworkBus.OnAllStatesSaved += SaveCurrentState;
+        base.Start();
 
-        NetworkBus.OnPredictableSpawned?.Invoke(this);
+        if (!NetworkRepository.IsServer)
+            serverStateTransform.parent = null;
     }
 
-    private void OnDestroy()
+    protected override void Update()
     {
-        NetworkBus.OnInputsSetToTick -= SetInputByTick;
-        NetworkBus.OnAllStatesSaved -= SaveCurrentState;
-    }
-
-    private void Update()
-    {
-        if (NetworkRepository.IsServer)
-            return;
+        base.Update();
 
         if (!NetworkRepository.IsCurrentClientOwnerOfObject(gameObject))
             return;
-        
-        while (NetworkSettings.ProcessTick < NetworkSettings.CurrentTick)
-        {
-            NetworkSettings.ProcessTick++;
 
-            var input = new PlayerInputs(UnityEngine.Input.GetAxis("Horizontal"), UnityEngine.Input.GetAxis("Vertical"), NetworkSettings.ProcessTick);
-
-            Input(input);
-
-            Physics.Simulate(Time.fixedDeltaTime);
-
-            SaveCurrentState(NetworkSettings.ProcessTick);
-
-            NetworkBus.OnCommandSendToServer(new InputCmd(input));
-
-            
-        }
+        UIBus.OnSpeedUpdated?.Invoke(Rigidbody.velocity.magnitude);
     }
 
-
-    public override void ApplyState(RigidbodyState state)
-    {
-        Rigidbody.position= state.Position;
-        Rigidbody.rotation = state.Rotation;
-        Rigidbody.velocity = state.Velocity;
-        Rigidbody.angularVelocity = state.RotationVelocity;
-    }
 
     public override void Input(PlayerInputs playerInputs)
     {
-        // Just simple rigidbody, don`t need inputs
-
-        // ...
-
-        // Move this pls!
-
         Rigidbody.AddTorque(Vector3.right * playerInputs.Y * 50f, ForceMode.Acceleration);
         Rigidbody.AddTorque(-Vector3.forward * playerInputs.X * 50f, ForceMode.Acceleration);
     }
 
-    public override void Reconcilate(RigidbodyState state)
+    public override void ApplyState(PredictableState state)
     {
-        PhysicsStates[state.Tick % 1024] = state;
+        var rigidbodyState = (RigidbodyState)state;
 
-        ApplyState(state);
-
-        // return if where no states to reconcilate
-        if (!InputStates.Any(x => x.Tick > state.Tick))
-            return;
-
-        for (int i = state.Tick + 1; i <= NetworkSettings.CurrentTick; i++)
-        {
-            NetworkBus.OnInputsSetToTick?.Invoke(i);
-
-            Physics.Simulate(Time.fixedDeltaTime);
-
-            NetworkBus.OnAllStatesSaved?.Invoke(i);
-        }
-
-        // Recalculate position because of desync
-
-        // Starting from state in input to last state
-
-
-        // Set state
-
-        // Set all other physics to this tick state
-
-        // Simulate till last tick
+        Rigidbody.position = rigidbodyState.Position;
+        Rigidbody.rotation = rigidbodyState.Rotation;
+        Rigidbody.velocity = rigidbodyState.Velocity;
+        Rigidbody.angularVelocity = rigidbodyState.RotationVelocity;
     }
+
+    public override PredictableState GetState()
+    {
+        return new RigidbodyState(NetworkSettings.ProcessTick,
+            Rigidbody.position,
+            Rigidbody.velocity,
+            Rigidbody.rotation,
+            Rigidbody.angularVelocity,
+            lastAppliedInputs
+            );
+    }
+
 
     public override void SaveCurrentState(int tick)
     {
@@ -111,42 +69,32 @@ public class PhysicsObject : Predictable
             lastAppliedInputs
             );
 
-        PhysicsStates[tick % 1024] = state;
+        States[tick % 1024] = state;
     }
 
-    public override void SetInputByTick(int tick)
+    public override void UpdateState(PredictableState state)
     {
-        var statesWithInputs = PhysicsStates.Where(x => x.Tick <= tick)
-            .Where(x => x.PlayerInputs != null);
+        var serverState = state as RigidbodyState;
 
-        if (statesWithInputs == null)
-            return;
-
-        var lastLocalInputState = statesWithInputs.OrderByDescending(x => x.Tick).First();
-
-        Input(lastLocalInputState.PlayerInputs);
-
-        if (lastLocalInputState.Tick == tick)
+        if (serverState == null)
         {
-            lastAppliedInputs = lastLocalInputState.PlayerInputs;
+            Debug.LogError("Error while applying server predictable state!");
             return;
         }
 
-        lastAppliedInputs = null;
-    }
+        serverStateTransform.position = serverState.Position;
+        serverStateTransform.rotation = serverState.Rotation;
 
-    public override void UpdateState(RigidbodyState serverState)
-    {
-        var localState = PhysicsStates.FirstOrDefault(x => x?.Tick == serverState.Tick);
+        var localState = States.FirstOrDefault(x => x?.Tick == serverState.Tick);
 
         if (localState == null)
         {
             Debug.LogError($"Client received server state with tick {serverState.Tick}, " +
-                $"but clients last state tick was {PhysicsStates.Where(x => x != null)?.OrderByDescending(x => x.Tick).First().Tick}");
+                $"but clients last state tick was {States.Where(x => x != null)?.OrderByDescending(x => x.Tick).First().Tick}");
             return;
         }
 
-        var error = (serverState.Position - localState.Position).magnitude;
+        var error = (serverState.Position - (localState as RigidbodyState).Position).magnitude;
 
         if (error >= NetworkSettings.MaximumError)
         {

@@ -5,14 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static Unity.Burst.Intrinsics.X86.Avx;
 
 namespace Assets.Scripts.Network
 {
     public class InputProcessor : MonoBehaviour
     {
-        public static List<PhysicsObject> physicsObjects = new();
+        public static List<Predictable> physicsObjects = new();
 
-        private static Dictionary<PhysicsObject, List<PlayerInputs>> objectInputsPairs = new();
+        private static Dictionary<Predictable, List<PlayerInputs>> objectInputsPairs = new();
 
 
         private void Awake()
@@ -25,7 +26,7 @@ namespace Assets.Scripts.Network
         }
 
 
-        public static void AddInput(PhysicsObject physicsObject, PlayerInputs playerInputs)
+        public static void AddInput(Predictable physicsObject, PlayerInputs playerInputs)
         {
             Debug.Log($"Received Player input at tick {playerInputs.Tick}. Last server processed tick is {NetworkSettings.ProcessTick}. Current tick is {NetworkSettings.CurrentTick}");
 
@@ -82,11 +83,9 @@ namespace Assets.Scripts.Network
             {
                 var objectId = NetworkRepository.GetGameObjectsId(physicsObject.Key.gameObject);
 
-                var syncCmd = new SyncRigidbodyCmd(
+                var syncCmd = new SyncPredictableCmd(
                     objectId,
-                    physicsObject.Key.Rigidbody,
-                    physicsObject.Value,
-                    tick
+                    JsonUtility.ToJson(physicsObject.Key.GetState())
                     );
 
                 NetworkBus.OnCommandSendToClients(syncCmd);
