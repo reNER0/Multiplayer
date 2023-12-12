@@ -11,6 +11,8 @@ public static class NetworkBus
     public static Action<ICommand> OnCommandSendToClients;
     public static Action<NetworkClient> OnClientConnected;
     public static Action<NetworkClient> OnClientDisconnected;
+    public static Action<int> OnInputsSetToTick;
+    public static Action<int> OnAllStatesSaved;
 
     public static Action<Predictable, PlayerInputs> OnPredictableInput;
     public static Action<Predictable> OnPredictableSpawned;

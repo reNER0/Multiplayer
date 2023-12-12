@@ -32,6 +32,8 @@ public class ClientHub : Hub
         return;
 #endif
 
+        Application.runInBackground = true;
+
         ConnectClient();
 
         NetworkBus.OnPerformCommand += PerformCommand;
@@ -44,10 +46,12 @@ public class ClientHub : Hub
 
     public async void PerformCommand(ICommand cmd)
     {
+        await Task.Delay(80);
+
         cmd.Execute();
     }
 
-    public void SendCommandToServer(ICommand cmd)
+    public async void SendCommandToServer(ICommand cmd)
     {
         var data = CommandToString(cmd);
 
@@ -151,7 +155,6 @@ public class ClientHub : Hub
 
         lastPingTime = DateTime.Now;
         SendCommandToServer(new PingCmd());
-        SendCommandToServer(new InputCmd(new PlayerInputs(1,1,0)));
     }
 
     public void Dispose()

@@ -11,8 +11,9 @@ public static class NetworkSettings
     public static float AppDeltaTime { get; private set; } = 0;
     public static int DeltaTick { get; private set; } = 0;
 
-    //public static int CurrentTick => (int)((Time.unscaledTime + AppDeltaTime) / Time.fixedDeltaTime);
+    // move this pls
     public static int CurrentTick => ((int)(Time.unscaledTime / Time.fixedDeltaTime) - DeltaTick);
+    public static int ProcessTick = 0;
      
 
     public static void SetAppDeltaTimeTime(DateTime serverStartupTime)

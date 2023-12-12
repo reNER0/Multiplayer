@@ -20,15 +20,18 @@ namespace Assets.Scripts.Network.Commands
         private Vector3 rotationVelocity;
         [SerializeField]
         private int tick;
+        [SerializeField]
+        private PlayerInputs playerInputs;
 
-        public SyncRigidbodyCmd(int objectId, Vector3 position, Vector3 velocity, Quaternion rotation, Vector3 rotationVelocity, int tick)
+        public SyncRigidbodyCmd(int objectId, Rigidbody rigidbody, PlayerInputs playerInputs, int tick)
         {
             this.objectId = objectId;
-            this.position = position;
-            this.velocity = velocity;
-            this.rotation = rotation;
-            this.rotationVelocity = rotationVelocity;
+            position = rigidbody.position;
+            velocity = rigidbody.velocity;
+            rotation = rigidbody.rotation;
+            rotationVelocity = rigidbody.angularVelocity;
             this.tick = tick;
+            this.playerInputs = playerInputs;
         }
 
         public void Execute()
@@ -40,7 +43,7 @@ namespace Assets.Scripts.Network.Commands
             if (predictable == null)
                 return;
 
-            //predictable.Reconcilate(new RigidbodyState(tick, position, velocity, rotation, rotationVelocity));
+            predictable.UpdateState(new RigidbodyState(tick, position, velocity, rotation, rotationVelocity, playerInputs));
         }
     }
 }

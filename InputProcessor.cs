@@ -14,13 +14,11 @@ namespace Assets.Scripts.Network
 
         private static Dictionary<PhysicsObject, List<PlayerInputs>> objectInputsPairs = new();
 
-        private static int currentSimulatingTick = 0;
-
 
         private void Awake()
         {
 #if !UNITY_SERVER
-            Destroy(this);
+            return;
 #endif
 
             NetworkBus.OnPredictableSpawned += AddObject;
@@ -29,7 +27,7 @@ namespace Assets.Scripts.Network
 
         public static void AddInput(PhysicsObject physicsObject, PlayerInputs playerInputs)
         {
-            Debug.LogError(playerInputs.Tick + " when on server is " + currentSimulatingTick + " and tick is " + NetworkSettings.CurrentTick);
+            Debug.Log($"Received Player input at tick {playerInputs.Tick}. Last server processed tick is {NetworkSettings.ProcessTick}. Current tick is {NetworkSettings.CurrentTick}");
 
             if (!objectInputsPairs.ContainsKey(physicsObject))
             {
@@ -43,14 +41,14 @@ namespace Assets.Scripts.Network
 
         private static void CheckForMatch()
         {
-            var outOfMaximumPing = (NetworkSettings.CurrentTick - currentSimulatingTick) > NetworkSettings.MaximumPingInTicks;
+            var outOfMaximumPing = (NetworkSettings.CurrentTick - NetworkSettings.ProcessTick) > NetworkSettings.MaximumPingInTicks;
 
-            var combo = objectInputsPairs.All(x => (NetworkRepository.IsCurrentClientOwnerOfObject(x.Key.gameObject) || x.Value.Any(x => x.Tick == currentSimulatingTick))) && (objectInputsPairs.Count > 0);
+            var combo = objectInputsPairs.All(x => (NetworkRepository.IsCurrentClientOwnerOfObject(x.Key.gameObject) || x.Value.Any(x => x.Tick == NetworkSettings.ProcessTick + 1))) && (objectInputsPairs.Count > 0);
 
             if (outOfMaximumPing || combo)
             {
-                ProcessOnTick(currentSimulatingTick);
-                currentSimulatingTick++;
+                NetworkSettings.ProcessTick++;
+                ProcessOnTick(NetworkSettings.ProcessTick);
 
                 CheckForMatch();
                 return;
@@ -59,8 +57,10 @@ namespace Assets.Scripts.Network
 
         private static void ProcessOnTick(int tick)
         {
+            // Collect all inputs at tick
             var objectInputPairs = objectInputsPairs.ToDictionary(x => x.Key, y => y.Value.FirstOrDefault(x => x.Tick == tick));
 
+            // Apply Inputs, forces, etc
             foreach (var objectInputPair in objectInputPairs)
             {
                 var input = objectInputPair.Value;
@@ -68,27 +68,31 @@ namespace Assets.Scripts.Network
                 if (input == null)
                     continue;
 
-                //objectInputPair.Key.Input(objectInputPair.Value);
+                
+                objectInputPair.Key.Input(objectInputPair.Value);
             }
 
+            
+
+            // Simulate all physics
             Physics.Simulate(Time.fixedDeltaTime);
 
-            foreach (var rigidBody in objectInputPairs.Keys)
+            // Sync every rigidbody
+            foreach (var physicsObject in objectInputPairs)
             {
-                var objectId = NetworkRepository.GetGameObjectsId(rigidBody.gameObject);
+                var objectId = NetworkRepository.GetGameObjectsId(physicsObject.Key.gameObject);
 
-                /*var syncCmd = new SyncRigidbodyCmd(
+                var syncCmd = new SyncRigidbodyCmd(
                     objectId,
-                    rigidBody.Rigidbody.position,
-                    rigidBody.Rigidbody.velocity,
-                    rigidBody.Rigidbody.rotation,
-                    rigidBody.Rigidbody.angularVelocity,
+                    physicsObject.Key.Rigidbody,
+                    physicsObject.Value,
                     tick
                     );
 
-                NetworkBus.OnCommandSendToClients(syncCmd);*/
+                NetworkBus.OnCommandSendToClients(syncCmd);
             }
 
+            // Clear all old tick inputs
             foreach (var objectInputsPair in objectInputsPairs)
             {
                 objectInputsPair.Value.RemoveAll(x => x.Tick <= tick);

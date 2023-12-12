@@ -17,8 +17,11 @@ public class ServerHub : Hub
         return;
 #endif
 
+        Application.runInBackground = true;
+
         NetworkBus.OnCommandSendToClient += SendCommandToClient;
         NetworkBus.OnCommandSendToClients += SendCommandToAllClients;
+        NetworkBus.OnPerformCommand += PerformCommand;
 
         ConnectingClientsLoopTask();
     }
@@ -88,16 +91,6 @@ public class ServerHub : Hub
         NetworkBus.OnClientConnected?.Invoke(connectedClient);
     }
 
-    private void CreateBall()
-    {
-        return;
-        var ballCmd = new SpawnCmd("Ball", -1, Vector3.up * 3, Quaternion.identity);
-
-        PerformCommand(ballCmd);
-
-        //NetworkBus.OnPredictableSpawned?.Invoke(NetworkRepository.NetworkObjectById.Select(x => x.Value).FirstOrDefault(x => x.OwnerId == -1).GameObject);
-    }
-
     private async Task ClientReadingTask(NetworkClient client)
     {
         while (true)
@@ -118,7 +111,7 @@ public class ServerHub : Hub
         }
     }
 
-    public async Task PerformCommand(ICommand cmd)
+    public async void PerformCommand(ICommand cmd)
     {
         try
         {
@@ -181,5 +174,7 @@ public class ServerHub : Hub
 
         NetworkBus.OnCommandSendToClient -= SendCommandToClient;
         NetworkBus.OnCommandSendToClients -= SendCommandToAllClients;
+
+        NetworkBus.OnPerformCommand -= PerformCommand;
     }
 }
