@@ -46,7 +46,7 @@ public class ClientHub : Hub
 
     public async void PerformCommand(ICommand cmd)
     {
-        await Task.Delay(80);
+        //await Task.Delay(80);
 
         cmd.Execute();
     }
@@ -55,8 +55,17 @@ public class ClientHub : Hub
     {
         var data = CommandToString(cmd);
 
-        _streamWriter.WriteLine(data);
-        _streamWriter.Flush();
+        try
+        {
+            _streamWriter.WriteLine(data);
+            _streamWriter.Flush();
+        }
+        catch (Exception e)
+        {
+            client?.Close();
+            Debug.LogError(e);
+            return;
+        }
     }
 
     private async Task ConnectClient()
@@ -157,18 +166,17 @@ public class ClientHub : Hub
         SendCommandToServer(new PingCmd());
     }
 
-    public void Dispose()
+    private void OnDestroy()
     {
         _disposed = true;
+
+        client?.Close();
+        _serverListenerThread.Abort();
 
         NetworkBus.OnPerformCommand -= PerformCommand;
         NetworkBus.OnCommandSendToServer -= SendCommandToServer;
 
         NetworkBus.OnPongReceived -= SendPing;
-
-        client?.Dispose();
-        _streamReader?.Dispose();
-        _streamWriter?.Dispose();
     }
 
     public void Update()

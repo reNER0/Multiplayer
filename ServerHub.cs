@@ -11,6 +11,11 @@ using UnityEngine.Windows;
 
 public class ServerHub : Hub
 {
+    private static TcpListener tcpListener;
+
+    private bool _disposed = false;
+
+
     private void Awake()
     {
         Application.runInBackground = true;
@@ -27,10 +32,10 @@ public class ServerHub : Hub
     {
         Debug.Log("Starting server socket");
 
-        var tcpListener = new TcpListener(IPAddress.Any, _port);
+        tcpListener = new TcpListener(IPAddress.Any, _port);
         tcpListener.Start();
 
-        while (true)
+        while (!_disposed)
         {
             try
             {
@@ -89,7 +94,7 @@ public class ServerHub : Hub
 
     private async Task ClientReadingTask(NetworkClient client)
     {
-        while (true)
+        while (!_disposed)
         {
             if (client.Client.Connected == false)
             {
@@ -164,13 +169,17 @@ public class ServerHub : Hub
         }
     }
 
-    public void Dispose()
+    public void OnDestroy()
     {
+        _disposed = true;
+
         DisconnectAllClients();
 
         NetworkBus.OnCommandSendToClient -= SendCommandToClient;
         NetworkBus.OnCommandSendToClients -= SendCommandToAllClients;
 
         NetworkBus.OnPerformCommand -= PerformCommand;
+
+        tcpListener?.Stop();
     }
 }
