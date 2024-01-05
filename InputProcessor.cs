@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-using static Unity.Burst.Intrinsics.X86.Avx;
 
 namespace Assets.Scripts.Network
 {
@@ -14,17 +13,6 @@ namespace Assets.Scripts.Network
         public static List<Predictable> physicsObjects = new();
 
         private static Dictionary<Predictable, List<PlayerInputs>> objectInputsPairs = new();
-
-
-        private void Awake()
-        {
-#if !UNITY_SERVER
-            return;
-#endif
-
-            NetworkBus.OnPredictableSpawned += AddObject;
-        }
-
 
         public static void AddInput(Predictable physicsObject, PlayerInputs playerInputs)
         {
@@ -107,12 +95,6 @@ namespace Assets.Scripts.Network
 
             physicsObjects.Add(physicsObject);
             objectInputsPairs.Add(physicsObject, new());
-        }
-
-
-        private void OnDestroy()
-        {
-            NetworkBus.OnPredictableSpawned -= AddObject;
         }
     }
 }

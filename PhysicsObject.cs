@@ -86,7 +86,7 @@ public class PhysicsObject : Predictable
         serverStateTransform.rotation = serverState.Rotation;
 
         var localState = States.FirstOrDefault(x => x?.Tick == serverState.Tick);
-
+        
         if (localState == null)
         {
             Debug.LogError($"Client received server state with tick {serverState.Tick}, " +

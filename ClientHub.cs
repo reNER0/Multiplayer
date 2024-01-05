@@ -29,7 +29,7 @@ public class ClientHub : Hub
     private void Awake()
     {
 #if UNITY_SERVER
-        return;
+            return;
 #endif
 
         Application.runInBackground = true;

@@ -13,10 +13,6 @@ public class ServerHub : Hub
 {
     private void Awake()
     {
-#if !UNITY_SERVER
-        return;
-#endif
-
         Application.runInBackground = true;
 
         NetworkBus.OnCommandSendToClient += SendCommandToClient;
