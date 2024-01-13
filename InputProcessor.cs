@@ -14,8 +14,6 @@ namespace Assets.Scripts.Network
 
         public static void AddInput(Predictable physicsObject, PlayerInputs playerInputs)
         {
-            Debug.Log($"Received Player input at tick {playerInputs.Tick}. Last server processed tick is {NetworkSettings.ProcessTick}. Current tick is {NetworkSettings.CurrentTick}");
-
             if (!objectInputsPairs.ContainsKey(physicsObject))
             {
                 objectInputsPairs.Add(physicsObject, new());
