@@ -22,7 +22,6 @@ namespace Assets.Scripts.Network
             {
                 using (var gs = new GZipStream(msi, CompressionMode.Decompress))
                 {
-                    //gs.CopyTo(mso);
                     CopyTo(gs, mso);
                 }
 

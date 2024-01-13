@@ -28,6 +28,7 @@ namespace Assets.Scripts.Network.Commands
             if (predictable == null)
                 return;
 
+            // TODO : refactor this
             SerializableClass ctype = JsonUtility.FromJson<SerializableClass>(stateJson);
             Type t = Type.GetType(ctype.ClassName);
             PredictableState gc = (PredictableState)JsonUtility.FromJson(stateJson, t);

@@ -11,8 +11,10 @@ public static class NetworkSettings
     public static float AppDeltaTime { get; private set; } = 0;
     public static int DeltaTick { get; private set; } = 0;
 
-    // move this pls
+    // TODO : move this
     public static int CurrentTick => ((int)(Time.unscaledTime / Time.fixedDeltaTime) - DeltaTick);
+
+    // TODO : remove one of this, ProccessTick used only on server
     public static int ProcessTick = 0;
     public static int PreviewTick = 0;
 

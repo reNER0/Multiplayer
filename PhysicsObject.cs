@@ -30,7 +30,7 @@ public class PhysicsObject : Predictable
         UIBus.OnSpeedUpdated?.Invoke(Rigidbody.velocity.magnitude);
     }
 
-
+    // TODO : PhysicsObject can`t have inputs! Remove this
     public override void Input(PlayerInputs playerInputs)
     {
         Rigidbody.AddTorque(Vector3.right * playerInputs.Y * 50f, ForceMode.Acceleration);

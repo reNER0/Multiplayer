@@ -59,8 +59,6 @@ namespace Assets.Scripts.Network
                 objectInputPair.Key.Input(objectInputPair.Value);
             }
 
-            
-
             // Simulate all physics
             Physics.Simulate(Time.fixedDeltaTime);
 

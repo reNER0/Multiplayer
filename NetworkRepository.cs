@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Sockets;
 using UnityEngine;
 
+// TODO : refactor this
 public static class NetworkRepository
 {
     public static int CurrentCliendId { get; private set; } = -1;

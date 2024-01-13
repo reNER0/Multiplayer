@@ -29,7 +29,7 @@ public class ServerHub : Hub
     }
 
 
-    private async Task ConnectingClientsLoopTask()
+    private async void ConnectingClientsLoopTask()
     {
         Debug.Log("Starting server socket");
 
@@ -69,12 +69,12 @@ public class ServerHub : Hub
 
         connectedClient.StreamWriter.AutoFlush = true;
 
-        const string FMT = "O";
-        DateTime now1 = NetworkSettings.ServerStartupTime;
-        string strDate = now1.ToString(FMT);
+        const string format = "O";
+        DateTime serverDateTime = NetworkSettings.ServerStartupTime;
+        string strDate = serverDateTime.ToString(format);
         var initCmd = new InitClientCmd(availableId, strDate, NetworkSettings.CurrentTick);
 
-        Debug.Log($"Server Utc: {now1}");
+        Debug.Log($"Server Utc: {serverDateTime}");
         Debug.Log($"Tick: {NetworkSettings.CurrentTick}");
 
         SendCommandToClient(initCmd, connectedClient);
@@ -93,7 +93,7 @@ public class ServerHub : Hub
         NetworkBus.OnClientConnected?.Invoke(connectedClient);
     }
 
-    private async Task ClientReadingTask(NetworkClient client)
+    private async void ClientReadingTask(NetworkClient client)
     {
         while (!_disposed)
         {
@@ -113,11 +113,10 @@ public class ServerHub : Hub
         }
     }
 
-    public async void PerformCommand(ICommand cmd)
+    public void PerformCommand(ICommand cmd)
     {
         try
         {
-            // error after executing this
             cmd.Execute();
 
             if (publicCommandTypes.Contains(cmd.GetType()))
@@ -171,6 +170,7 @@ public class ServerHub : Hub
         }
     }
 
+    // TODO : refactor dispose
     public void OnDestroy()
     {
         _disposed = true;

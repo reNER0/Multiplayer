@@ -46,8 +46,6 @@ public class ClientHub : Hub
 
     public async void PerformCommand(ICommand cmd)
     {
-        //await Task.Delay(80);
-
         cmd.Execute();
     }
 
