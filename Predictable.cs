@@ -24,25 +24,25 @@ public abstract class Predictable : MonoBehaviour
 
     protected virtual void Update()
     {
-        if (NetworkRepository.IsServer)
-            return;
-
         if (!NetworkRepository.IsCurrentClientOwnerOfObject(gameObject))
             return;
 
-        while (NetworkSettings.ProcessTick < NetworkSettings.CurrentTick)
+        while (NetworkSettings.PreviewTick < NetworkSettings.CurrentTick)
         {
-            NetworkSettings.ProcessTick++;
+            NetworkSettings.PreviewTick++;
 
-            var input = new PlayerInputs(UnityEngine.Input.GetAxis("Horizontal"), UnityEngine.Input.GetAxis("Vertical"), NetworkSettings.ProcessTick);
+            var input = new PlayerInputs(UnityEngine.Input.GetAxis("Horizontal"), UnityEngine.Input.GetAxis("Vertical"), NetworkSettings.PreviewTick);
 
-            Input(input);
+            if (!NetworkRepository.IsServer)
+            {
+                Input(input);
 
-            Physics.Simulate(Time.fixedDeltaTime);
+                Physics.Simulate(Time.fixedDeltaTime);
 
-            SaveCurrentState(NetworkSettings.ProcessTick);
+                SaveCurrentState(NetworkSettings.PreviewTick);
+            }
 
-            NetworkBus.OnCommandSendToServer(new InputCmd(input));
+            NetworkBus.OnCommandSendToServer?.Invoke(new InputCmd(input));
         }
     }
 

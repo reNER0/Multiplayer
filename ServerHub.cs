@@ -20,6 +20,7 @@ public class ServerHub : Hub
     {
         Application.runInBackground = true;
 
+        NetworkBus.OnCommandSendToServer += PerformCommand;
         NetworkBus.OnCommandSendToClient += SendCommandToClient;
         NetworkBus.OnCommandSendToClients += SendCommandToAllClients;
         NetworkBus.OnPerformCommand += PerformCommand;
@@ -116,6 +117,7 @@ public class ServerHub : Hub
     {
         try
         {
+            // error after executing this
             cmd.Execute();
 
             if (publicCommandTypes.Contains(cmd.GetType()))
@@ -174,6 +176,8 @@ public class ServerHub : Hub
         _disposed = true;
 
         DisconnectAllClients();
+
+        NetworkBus.OnCommandSendToServer -= PerformCommand;
 
         NetworkBus.OnCommandSendToClient -= SendCommandToClient;
         NetworkBus.OnCommandSendToClients -= SendCommandToAllClients;

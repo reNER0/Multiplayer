@@ -10,8 +10,6 @@ namespace Assets.Scripts.Network
 {
     public class InputProcessor : MonoBehaviour
     {
-        public static List<Predictable> physicsObjects = new();
-
         private static Dictionary<Predictable, List<PlayerInputs>> objectInputsPairs = new();
 
         public static void AddInput(Predictable physicsObject, PlayerInputs playerInputs)
@@ -32,7 +30,7 @@ namespace Assets.Scripts.Network
         {
             var outOfMaximumPing = (NetworkSettings.CurrentTick - NetworkSettings.ProcessTick) > NetworkSettings.MaximumPingInTicks;
 
-            var combo = objectInputsPairs.All(x => (NetworkRepository.IsCurrentClientOwnerOfObject(x.Key.gameObject) || x.Value.Any(x => x.Tick == NetworkSettings.ProcessTick + 1))) && (objectInputsPairs.Count > 0);
+            var combo = objectInputsPairs.All(x => x.Value.Any(x => x.Tick == NetworkSettings.ProcessTick + 1)) && (objectInputsPairs.Count > 0);
 
             if (outOfMaximumPing || combo)
             {
@@ -84,17 +82,6 @@ namespace Assets.Scripts.Network
             {
                 objectInputsPair.Value.RemoveAll(x => x.Tick <= tick);
             }
-        }
-
-        private void AddObject(Predictable predictable)
-        {
-            var physicsObject = predictable.GetComponent<PhysicsObject>();
-
-            if (physicsObject == null)
-                return;
-
-            physicsObjects.Add(physicsObject);
-            objectInputsPairs.Add(physicsObject, new());
         }
     }
 }

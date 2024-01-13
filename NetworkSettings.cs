@@ -14,7 +14,7 @@ public static class NetworkSettings
     // move this pls
     public static int CurrentTick => ((int)(Time.unscaledTime / Time.fixedDeltaTime) - DeltaTick);
     public static int ProcessTick = 0;
-     
+    public static int PreviewTick = 0;
 
     public static void SetAppDeltaTimeTime(DateTime serverStartupTime)
     {
