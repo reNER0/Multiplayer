@@ -20,25 +20,7 @@ public class PhysicsObject : Predictable
             serverStateTransform.parent = null;
     }
 
-    protected override void Update()
-    {
-        base.Update();
-
-        if (!NetworkRepository.IsCurrentClientOwnerOfObject(gameObject))
-            return;
-
-        UIBus.OnSpeedUpdated?.Invoke(Rigidbody.velocity.magnitude);
-    }
-
-    // TODO : PhysicsObject can`t have inputs! Remove this
-    public override void Input(PlayerInputs playerInputs)
-    {
-        Rigidbody.AddTorque(Vector3.right * playerInputs.Y * 50f, ForceMode.Acceleration);
-        Rigidbody.AddTorque(-Vector3.forward * playerInputs.X * 50f, ForceMode.Acceleration);
-
-        Rigidbody.AddForce(Vector3.right * playerInputs.X * 10f, ForceMode.Force);
-        Rigidbody.AddForce(Vector3.forward * playerInputs.Y * 10f, ForceMode.Force);
-    }
+    public override void Input(PlayerInputs playerInputs) { }
 
     public override void ApplyState(PredictableState state)
     {
