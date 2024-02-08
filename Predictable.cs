@@ -31,7 +31,10 @@ public abstract class Predictable : MonoBehaviour
         {
             NetworkSettings.PreviewTick++;
 
-            var input = new PlayerInputs(UnityEngine.Input.GetAxis("Horizontal"), UnityEngine.Input.GetAxis("Vertical"), NetworkSettings.PreviewTick);
+            var inputX = UnityEngine.Input.GetAxis("Horizontal");
+            var inputY = UnityEngine.Input.GetAxis("Vertical");
+
+            var input = new PlayerInputs(inputX, inputY, NetworkSettings.PreviewTick);
 
             if (!NetworkRepository.IsServer)
             {

@@ -61,16 +61,19 @@ namespace Assets.Scripts.Network
             Physics.Simulate(Time.fixedDeltaTime);
 
             // Sync every rigidbody
-            foreach (var physicsObject in objectInputPairs)
+            if (tick % NetworkSettings.SyncEvery == 0)
             {
-                var objectId = NetworkRepository.GetGameObjectsId(physicsObject.Key.gameObject);
+                foreach (var physicsObject in objectInputPairs)
+                {
+                    var objectId = NetworkRepository.GetGameObjectsId(physicsObject.Key.gameObject);
 
-                var syncCmd = new SyncPredictableCmd(
-                    objectId,
-                    JsonUtility.ToJson(physicsObject.Key.GetState())
-                    );
+                    var syncCmd = new SyncPredictableCmd(
+                        objectId,
+                        JsonUtility.ToJson(physicsObject.Key.GetState())
+                        );
 
-                NetworkBus.OnCommandSendToClients(syncCmd);
+                    NetworkBus.OnCommandSendToClients(syncCmd);
+                }
             }
 
             // Clear all old tick inputs

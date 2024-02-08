@@ -72,7 +72,7 @@ public class ServerHub : Hub
         const string format = "O";
         DateTime serverDateTime = NetworkSettings.ServerStartupTime;
         string strDate = serverDateTime.ToString(format);
-        var initCmd = new InitClientCmd(availableId, strDate, NetworkSettings.CurrentTick);
+        var initCmd = new InitClientCmd(availableId, strDate, NetworkSettings.CurrentTick, Time.fixedDeltaTime);
 
         Debug.Log($"Server Utc: {serverDateTime}");
         Debug.Log($"Tick: {NetworkSettings.CurrentTick}");
