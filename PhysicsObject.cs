@@ -75,8 +75,8 @@ public class PhysicsObject : Predictable
         
         if (localState == null)
         {
-            Debug.LogError($"Client received server state with tick {serverState.Tick}, " +
-                $"but clients last state tick was {States.Where(x => x != null)?.OrderByDescending(x => x.Tick).First().Tick}");
+            //Debug.LogWarning($"Client received server state with tick {serverState.Tick}, " +
+            //    $"but clients last state tick was {States.Where(x => x != null)?.OrderByDescending(x => x.Tick).First().Tick}");
             return;
         }
 

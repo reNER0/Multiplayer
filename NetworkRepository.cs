@@ -1,10 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Sockets;
 using UnityEngine;
 
-// TODO : refactor this
 public static class NetworkRepository
 {
     public static int CurrentCliendId { get; private set; } = -1;
@@ -31,13 +28,4 @@ public static class NetworkRepository
             .Values.First(x => x.GameObject == gameObject)
             .OwnerId == CurrentCliendId;
     }
-}
-
-public class NetworkClient
-{
-    public int ClientId;
-    public TcpClient Client;
-    public StreamReader StreamReader;
-    public StreamWriter StreamWriter;
-    public PlayerInputs PlayerInputs;
 }

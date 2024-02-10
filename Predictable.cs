@@ -8,7 +8,9 @@ public abstract class Predictable : MonoBehaviour
 
     public PlayerInputs lastAppliedInputs;
 
+
     private static int previewTick;
+
 
     protected virtual void Start()
     {

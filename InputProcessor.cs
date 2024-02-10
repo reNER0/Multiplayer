@@ -14,7 +14,9 @@ namespace Assets.Scripts.Network
 
         private static int processTick;
 
+
         public static int ProcessTick => processTick;
+
 
         public static void AddInput(Predictable physicsObject, PlayerInputs playerInputs)
         {
@@ -27,6 +29,7 @@ namespace Assets.Scripts.Network
 
             CheckForMatch();
         }
+
 
         private static void CheckForMatch()
         {

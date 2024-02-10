@@ -12,14 +12,15 @@ using ThreadPriority = System.Threading.ThreadPriority;
 
 public class ClientHub : Hub
 {
+    [SerializeField]
+    private int pingDelayInMilliseconds = 500;
+
     private static TcpClient client;
     private static StreamReader _streamReader;
     private static StreamWriter _streamWriter;
 
     private static int ping = int.MaxValue;
     private DateTime lastPingSendTime = DateTime.Now;
-
-
 
     private Thread _serverListenerThread;
     private ConcurrentQueue<ICommand> _cmds = new();
@@ -161,7 +162,7 @@ public class ClientHub : Hub
         NetworkBus.OnPingUpdated?.Invoke(ping);
 
         // Delay between pings;
-        await Task.Delay(500);
+        await Task.Delay(pingDelayInMilliseconds);
 
         lastPingSendTime = DateTime.Now;
         SendCommandToServer(new PingCmd());
