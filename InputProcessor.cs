@@ -12,6 +12,12 @@ namespace Assets.Scripts.Network
     {
         private static Dictionary<Predictable, List<PlayerInputs>> objectInputsPairs = new();
 
+        private static int processTick;
+
+
+        public static int ProcessTick => processTick;
+
+
         public static void AddInput(Predictable physicsObject, PlayerInputs playerInputs)
         {
             if (!objectInputsPairs.ContainsKey(physicsObject))
@@ -24,16 +30,17 @@ namespace Assets.Scripts.Network
             CheckForMatch();
         }
 
+
         private static void CheckForMatch()
         {
-            var outOfMaximumPing = (NetworkSettings.CurrentTick - NetworkSettings.ProcessTick) > NetworkSettings.MaximumPingInTicks;
+            var outOfMaximumPing = (NetworkTime.CurrentTick - processTick) > NetworkSettings.MaximumPingInTicks;
 
-            var combo = objectInputsPairs.All(x => x.Value.Any(x => x.Tick == NetworkSettings.ProcessTick + 1)) && (objectInputsPairs.Count > 0);
+            var combo = objectInputsPairs.All(x => x.Value.Any(x => x.Tick == processTick + 1)) && (objectInputsPairs.Count > 0);
 
             if (outOfMaximumPing || combo)
             {
-                NetworkSettings.ProcessTick++;
-                ProcessOnTick(NetworkSettings.ProcessTick);
+                processTick++;
+                ProcessOnTick(processTick);
 
                 CheckForMatch();
                 return;
