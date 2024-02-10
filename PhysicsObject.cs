@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Assets.Scripts.Network;
 using Assets.Scripts.Network.Commands;
 using UnityEngine;
 
@@ -34,7 +35,7 @@ public class PhysicsObject : Predictable
 
     public override PredictableState GetState()
     {
-        return new RigidbodyState(NetworkSettings.ProcessTick,
+        return new RigidbodyState(InputProcessor.ProcessTick,
             Rigidbody.position,
             Rigidbody.velocity,
             Rigidbody.rotation,

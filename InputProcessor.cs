@@ -12,6 +12,10 @@ namespace Assets.Scripts.Network
     {
         private static Dictionary<Predictable, List<PlayerInputs>> objectInputsPairs = new();
 
+        private static int processTick;
+
+        public static int ProcessTick => processTick;
+
         public static void AddInput(Predictable physicsObject, PlayerInputs playerInputs)
         {
             if (!objectInputsPairs.ContainsKey(physicsObject))
@@ -26,14 +30,14 @@ namespace Assets.Scripts.Network
 
         private static void CheckForMatch()
         {
-            var outOfMaximumPing = (NetworkSettings.CurrentTick - NetworkSettings.ProcessTick) > NetworkSettings.MaximumPingInTicks;
+            var outOfMaximumPing = (NetworkTime.CurrentTick - processTick) > NetworkSettings.MaximumPingInTicks;
 
-            var combo = objectInputsPairs.All(x => x.Value.Any(x => x.Tick == NetworkSettings.ProcessTick + 1)) && (objectInputsPairs.Count > 0);
+            var combo = objectInputsPairs.All(x => x.Value.Any(x => x.Tick == processTick + 1)) && (objectInputsPairs.Count > 0);
 
             if (outOfMaximumPing || combo)
             {
-                NetworkSettings.ProcessTick++;
-                ProcessOnTick(NetworkSettings.ProcessTick);
+                processTick++;
+                ProcessOnTick(processTick);
 
                 CheckForMatch();
                 return;
@@ -61,19 +65,16 @@ namespace Assets.Scripts.Network
             Physics.Simulate(Time.fixedDeltaTime);
 
             // Sync every rigidbody
-            if (tick % NetworkSettings.SyncEvery == 0)
+            foreach (var physicsObject in objectInputPairs)
             {
-                foreach (var physicsObject in objectInputPairs)
-                {
-                    var objectId = NetworkRepository.GetGameObjectsId(physicsObject.Key.gameObject);
+                var objectId = NetworkRepository.GetGameObjectsId(physicsObject.Key.gameObject);
 
-                    var syncCmd = new SyncPredictableCmd(
-                        objectId,
-                        JsonUtility.ToJson(physicsObject.Key.GetState())
-                        );
+                var syncCmd = new SyncPredictableCmd(
+                    objectId,
+                    JsonUtility.ToJson(physicsObject.Key.GetState())
+                    );
 
-                    NetworkBus.OnCommandSendToClients(syncCmd);
-                }
+                NetworkBus.OnCommandSendToClients(syncCmd);
             }
 
             // Clear all old tick inputs

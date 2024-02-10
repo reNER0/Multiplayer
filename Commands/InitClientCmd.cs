@@ -10,35 +10,32 @@ namespace Assets.Scripts.Network.Commands
         [SerializeField]
         private int newClientId;
         [SerializeField]
-        private int tick;
-        [SerializeField]
         private float fixedDeltaTime;
         [SerializeField]
-        private string serverUnixStartupTime;
+        private string serverStartupTime;
 
-        public InitClientCmd(int newClientId, string serverUnixStartupTime, int tick, float fixedDeltaTime)
+        public InitClientCmd(int newClientId, string serverStartupTime, float fixedDeltaTime)
         {
             this.newClientId = newClientId;
-            this.serverUnixStartupTime = serverUnixStartupTime;
-            this.tick = tick;
+            this.serverStartupTime = serverStartupTime;
             this.fixedDeltaTime = fixedDeltaTime;
         }
 
         public void Execute()
         {
-            const string FMT = "O";
-            DateTime now2 = DateTime.ParseExact(serverUnixStartupTime, FMT, CultureInfo.InvariantCulture);
+            DateTime serverStartupDateTime = DateTime.ParseExact(serverStartupTime, "yyyy-MM-dd HH:mm:ss.fff", null);
 
-            NetworkSettings.SetAppDeltaTimeTime(now2);
-            NetworkSettings.SetDeltaTick(tick);
+            var dateTimeDifference = NetworkTools.StartupDateTime - serverStartupDateTime;
+            var timeDifference = dateTimeDifference.TotalMilliseconds / 1000f;
+
+            NetworkTime.SetTimeDifference(timeDifference);
             NetworkRepository.SetClientId(newClientId);
-            NetworkBus.OnPongReceived?.Invoke();
-
             Time.fixedDeltaTime = fixedDeltaTime;
 
+            NetworkBus.OnPongReceived?.Invoke();
+
             Debug.Log($"Init cmd: {newClientId}");
-            Debug.Log($"Received Server Utc: {now2}");
-            Debug.Log($"Tick: {NetworkSettings.CurrentTick}");
+            Debug.Log($"Server Startup Time: {serverStartupDateTime}");
             Debug.Log($"FixedDeltaTime: {Time.fixedDeltaTime}");
         }
     }

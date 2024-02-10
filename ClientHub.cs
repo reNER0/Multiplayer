@@ -16,7 +16,8 @@ public class ClientHub : Hub
     private static StreamReader _streamReader;
     private static StreamWriter _streamWriter;
 
-    private DateTime lastPingTime = DateTime.Now;
+    private static int ping = int.MaxValue;
+    private DateTime lastPingSendTime = DateTime.Now;
 
 
 
@@ -24,6 +25,8 @@ public class ClientHub : Hub
     private ConcurrentQueue<ICommand> _cmds = new();
     private bool _disposed = false;
 
+
+    public static int Ping => ping;
 
 
     private void Awake()
@@ -154,13 +157,13 @@ public class ClientHub : Hub
 
     private async void SendPing()
     {
-        var ping = (DateTime.Now - lastPingTime).TotalMilliseconds;
-        NetworkBus.OnPingUpdated?.Invoke((int)ping);
+        ping = (int)(DateTime.Now - lastPingSendTime).TotalMilliseconds;
+        NetworkBus.OnPingUpdated?.Invoke(ping);
 
         // Delay between pings;
         await Task.Delay(500);
 
-        lastPingTime = DateTime.Now;
+        lastPingSendTime = DateTime.Now;
         SendCommandToServer(new PingCmd());
     }
 

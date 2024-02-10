@@ -8,6 +8,8 @@ public abstract class Predictable : MonoBehaviour
 
     public PlayerInputs lastAppliedInputs;
 
+    private static int previewTick;
+
     protected virtual void Start()
     {
         NetworkBus.OnInputsSetToTick += SetInputByTick;
@@ -27,14 +29,14 @@ public abstract class Predictable : MonoBehaviour
         if (!NetworkRepository.IsCurrentClientOwnerOfObject(gameObject))
             return;
 
-        while (NetworkSettings.PreviewTick < NetworkSettings.CurrentTick)
+        while (previewTick < NetworkTime.CurrentTick)
         {
-            NetworkSettings.PreviewTick++;
+            previewTick++;
 
             var inputX = UnityEngine.Input.GetAxis("Horizontal");
             var inputY = UnityEngine.Input.GetAxis("Vertical");
 
-            var input = new PlayerInputs(inputX, inputY, NetworkSettings.PreviewTick);
+            var input = new PlayerInputs(inputX, inputY, previewTick);
 
             if (!NetworkRepository.IsServer)
             {
@@ -42,7 +44,7 @@ public abstract class Predictable : MonoBehaviour
 
                 Physics.Simulate(Time.fixedDeltaTime);
 
-                SaveCurrentState(NetworkSettings.PreviewTick);
+                SaveCurrentState(previewTick);
             }
 
             NetworkBus.OnCommandSendToServer?.Invoke(new InputCmd(input));
@@ -68,7 +70,7 @@ public abstract class Predictable : MonoBehaviour
         if (!States.Any(x => x.Tick > state.Tick))
             return;
 
-        for (int i = state.Tick + 1; i <= NetworkSettings.CurrentTick; i++)
+        for (int i = state.Tick + 1; i <= NetworkTime.CurrentTick; i++)
         {
             NetworkBus.OnInputsSetToTick?.Invoke(i);
 

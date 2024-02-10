@@ -69,13 +69,10 @@ public class ServerHub : Hub
 
         connectedClient.StreamWriter.AutoFlush = true;
 
-        const string format = "O";
-        DateTime serverDateTime = NetworkSettings.ServerStartupTime;
-        string strDate = serverDateTime.ToString(format);
-        var initCmd = new InitClientCmd(availableId, strDate, NetworkSettings.CurrentTick, Time.fixedDeltaTime);
+        DateTime serverStartupDatetime = NetworkTools.StartupDateTime;
+        string serverStartupTime = serverStartupDatetime.ToString("yyyy-MM-dd HH:mm:ss.fff");
 
-        Debug.Log($"Server Utc: {serverDateTime}");
-        Debug.Log($"Tick: {NetworkSettings.CurrentTick}");
+        var initCmd = new InitClientCmd(availableId, serverStartupTime, Time.fixedDeltaTime);
 
         SendCommandToClient(initCmd, connectedClient);
 
