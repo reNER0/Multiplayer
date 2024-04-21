@@ -7,10 +7,12 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Windows;
 
 public class ServerHub : Hub
 {
+    [SerializeField]
+    private int timeSyncDelayInMilliseconds = 5000;
+
     private static TcpListener tcpListener;
 
     private bool _disposed = false;
@@ -69,10 +71,7 @@ public class ServerHub : Hub
 
         connectedClient.StreamWriter.AutoFlush = true;
 
-        DateTime serverStartupDatetime = NetworkTools.StartupDateTime;
-        string serverStartupTime = serverStartupDatetime.ToString("yyyy-MM-dd HH:mm:ss.fff");
-
-        var initCmd = new InitClientCmd(availableId, serverStartupTime, Time.fixedDeltaTime);
+        var initCmd = new InitClientCmd(availableId);
 
         SendCommandToClient(initCmd, connectedClient);
 
@@ -84,6 +83,7 @@ public class ServerHub : Hub
         NetworkRepository.ConnectedClients.Add(connectedClient);
 
         ClientReadingTask(connectedClient);
+        ClientTimeSyncTask(connectedClient);
 
         Debug.Log($"{client.Client.RemoteEndPoint} connected!");
 
@@ -110,6 +110,22 @@ public class ServerHub : Hub
         }
     }
 
+    // TODO : move this
+    private async void ClientTimeSyncTask(NetworkClient client)
+    {
+        while (!_disposed)
+        {
+            if (client.Client.Connected == false)
+                return;
+
+            var tickSyncCmd = new SyncTimeCmd(Time.fixedDeltaTime, NetworkTime.UpTime);
+            
+            SendCommandToClient(tickSyncCmd, client);
+
+            await Task.Delay(timeSyncDelayInMilliseconds);
+        }
+    }
+
     public void PerformCommand(ICommand cmd)
     {
         try
@@ -127,7 +143,7 @@ public class ServerHub : Hub
         }
     }
 
-    public void SendCommandToClient(ICommand cmd, NetworkClient client)
+    public async void SendCommandToClient(ICommand cmd, NetworkClient client)
     {
         var data = CommandToString(cmd);
 
