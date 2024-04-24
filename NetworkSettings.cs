@@ -17,8 +17,7 @@ public static class NetworkSettings
     public static readonly float SyncForce = 0.75f;
 
     // Maximum position delta for reconcilation
-    //public static readonly float MaximumError = 1f;
-    public static readonly float MaximumError = float.MaxValue;
+    public static readonly float MaximumError = 1f;
 
     // Maximum ping in ticks before starting to drop player inputs
     public static readonly float MaximumPingInTicks = 20;
