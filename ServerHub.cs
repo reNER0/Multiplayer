@@ -43,11 +43,12 @@ public class ServerHub : Hub
             try
             {
                 var client = await tcpListener.AcceptTcpClientAsync();
+                /*
                 client.NoDelay = true;
                 Console.WriteLine("The delay was set successfully to " + client.NoDelay.ToString());
                 client.ReceiveBufferSize = 16384;
                 client.SendBufferSize = 16384;
-
+                */
                 AddNewClient(client);
             }
             catch (Exception e)

@@ -44,7 +44,10 @@ public abstract class Predictable : MonoBehaviour
             {
                 Input(input);
 
-                Physics.Simulate(Time.fixedDeltaTime);
+                if (NetworkSettings.MultiplayerType == MultiplayerType.Physics)
+                {
+                    Physics.Simulate(Time.fixedDeltaTime);
+                }
 
                 SaveCurrentState(previewTick);
             }
@@ -64,6 +67,7 @@ public abstract class Predictable : MonoBehaviour
     {
         Debug.LogError("Reconcilating!");
 
+        // TODO : make all rigidbodies reconcilation
         States[state.Tick % 1024] = state;
 
         ApplyState(state);
@@ -76,7 +80,10 @@ public abstract class Predictable : MonoBehaviour
         {
             NetworkBus.OnInputsSetToTick?.Invoke(i);
 
-            Physics.Simulate(Time.fixedDeltaTime);
+            if (NetworkSettings.MultiplayerType == MultiplayerType.Physics)
+            {
+                Physics.Simulate(Time.fixedDeltaTime);
+            }
 
             NetworkBus.OnAllStatesSaved?.Invoke(i);
         }

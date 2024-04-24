@@ -1,10 +1,13 @@
-﻿using System;
-using UnityEngine;
+﻿public enum MultiplayerType
+{
+    Transforms,
+    Physics,
+}
 
 public static class NetworkSettings
 {
-    //public static readonly string ServerIP = "localhost";
-    public static readonly string ServerIP = "178.205.98.73";
+    public static readonly string ServerIP = "localhost";
+    //public static readonly string ServerIP = "178.205.98.73";
 
     // Smooth synchronization force between 0 and 1.
     // 1 - hard sync on every server state received, may be stuttering
@@ -14,8 +17,11 @@ public static class NetworkSettings
     public static readonly float SyncForce = 0.75f;
 
     // Maximum position delta for reconcilation
-    public static readonly float MaximumError = 0.5f;
+    //public static readonly float MaximumError = 1f;
+    public static readonly float MaximumError = float.MaxValue;
 
     // Maximum ping in ticks before starting to drop player inputs
     public static readonly float MaximumPingInTicks = 20;
+
+    public static readonly MultiplayerType MultiplayerType = MultiplayerType.Physics;
 }

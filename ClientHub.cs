@@ -44,8 +44,6 @@ public class ClientHub : Hub
         NetworkBus.OnCommandSendToServer += SendCommandToServer;
 
         NetworkBus.OnPongReceived += SendPing;
-
-        Application.runInBackground = true;
     }
 
     public async void PerformCommand(ICommand cmd)
