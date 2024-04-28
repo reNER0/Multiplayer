@@ -14,7 +14,7 @@ public static class NetworkSettings
     // 0 - no smooth sync
     // Choose this value properly.
     // Too small value causes unnecessary reconcilations
-    public static readonly float SyncForce = 0.6f;
+    public static readonly float SyncForce = 0.1f;
 
     // Maximum position delta for reconcilation
     public static readonly float MaximumError = 1f;
