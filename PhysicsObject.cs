@@ -1,8 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using Assets.Scripts.Network;
-using Assets.Scripts.Network.Commands;
 using UnityEngine;
 
 public class PhysicsObject : Predictable
@@ -32,8 +29,8 @@ public class PhysicsObject : Predictable
     {
         var rigidbodyState = (RigidbodyState)state;
 
-        Rigidbody.position = rigidbodyState.Position;
-        Rigidbody.rotation = rigidbodyState.Rotation;
+        Rigidbody.MovePosition(rigidbodyState.Position);
+        Rigidbody.MoveRotation(rigidbodyState.Rotation);
         Rigidbody.velocity = rigidbodyState.Velocity;
         Rigidbody.angularVelocity = rigidbodyState.RotationVelocity;
     }
@@ -76,8 +73,8 @@ public class PhysicsObject : Predictable
 
         if (!NetworkRepository.IsCurrentClientOwnerOfObject(gameObject))
         {
-            Rigidbody.position = serverState.Position;
-            Rigidbody.rotation = serverState.Rotation;
+            Rigidbody.MovePosition(serverState.Position);
+            Rigidbody.MoveRotation(serverState.Rotation);
             Rigidbody.velocity = serverState.Velocity;
             Rigidbody.angularVelocity = serverState.RotationVelocity;
             return;
