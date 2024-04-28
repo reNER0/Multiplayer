@@ -18,8 +18,6 @@ namespace Assets.Scripts.Network.Commands
         {
             NetworkRepository.SetClientId(newClientId);
 
-            NetworkBus.OnPongReceived?.Invoke();
-
             Debug.Log($"Init cmd: {newClientId}");
         }
     }

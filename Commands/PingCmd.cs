@@ -14,7 +14,7 @@ namespace Assets.Scripts.Network.Commands
             if (client == null)
                 return;
 
-            NetworkBus.OnCommandSendToClient?.Invoke(new PongCmd(), client);
+            NetworkBus.OnCommandSendToClient?.Invoke(new PongCmd(Time.fixedDeltaTime, NetworkTime.UpTime), client);
         }
     }
 }

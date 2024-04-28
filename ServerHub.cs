@@ -10,9 +10,6 @@ using UnityEngine;
 
 public class ServerHub : Hub
 {
-    [SerializeField]
-    private int timeSyncDelayInMilliseconds = 5000;
-
     private static TcpListener tcpListener;
 
     private bool _disposed = false;
@@ -84,7 +81,6 @@ public class ServerHub : Hub
         NetworkRepository.ConnectedClients.Add(connectedClient);
 
         ClientReadingTask(connectedClient);
-        ClientTimeSyncTask(connectedClient);
 
         Debug.Log($"{client.Client.RemoteEndPoint} connected!");
 
@@ -108,22 +104,6 @@ public class ServerHub : Hub
             var cmd = StringToCommand(data);
 
             PerformCommand(cmd);
-        }
-    }
-
-    // TODO : move this
-    private async void ClientTimeSyncTask(NetworkClient client)
-    {
-        while (!_disposed)
-        {
-            if (client.Client.Connected == false)
-                return;
-
-            var tickSyncCmd = new SyncTimeCmd(Time.fixedDeltaTime, NetworkTime.UpTime);
-            
-            SendCommandToClient(tickSyncCmd, client);
-
-            await Task.Delay(timeSyncDelayInMilliseconds);
         }
     }
 
