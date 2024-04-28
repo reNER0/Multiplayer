@@ -1,17 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO.Compression;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using UnityEngine;
 
-namespace Assets.Scripts.Network
+namespace Assets.Scripts.Network.DataCompressing
 {
     public class GZipDataCompressor : IDataCompressor
     {
         public byte[] Compress(byte[] bytes)
         {
+            Debug.LogError(new NotImplementedException());
             return null;
         }
 
@@ -27,24 +26,25 @@ namespace Assets.Scripts.Network
 
                 return mso.ToArray();
             }
-        }
 
-        public static void CopyTo(Stream src, Stream dest)
-        {
-            byte[] bytes = new byte[4096];
 
-            int cnt;
-
-            while ((cnt = src.Read(bytes, 0, bytes.Length)) != 0)
+            void CopyTo(Stream src, Stream dest)
             {
-                dest.Write(bytes, 0, cnt);
+                byte[] bytes = new byte[4096];
+
+                int cnt;
+
+                while ((cnt = src.Read(bytes, 0, bytes.Length)) != 0)
+                {
+                    dest.Write(bytes, 0, cnt);
+                }
             }
         }
 
 
-        public string Compress(string text)
+        public string Compress(string data)
         {
-            byte[] buffer = Encoding.UTF8.GetBytes(text);
+            byte[] buffer = Encoding.UTF8.GetBytes(data);
             var memoryStream = new MemoryStream();
             using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Compress, true))
             {
