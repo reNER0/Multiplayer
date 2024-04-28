@@ -7,7 +7,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Windows;
 
 public class ServerHub : Hub
 {
@@ -41,11 +40,12 @@ public class ServerHub : Hub
             try
             {
                 var client = await tcpListener.AcceptTcpClientAsync();
+                /*
                 client.NoDelay = true;
                 Console.WriteLine("The delay was set successfully to " + client.NoDelay.ToString());
                 client.ReceiveBufferSize = 16384;
                 client.SendBufferSize = 16384;
-
+                */
                 AddNewClient(client);
             }
             catch (Exception e)
@@ -69,10 +69,7 @@ public class ServerHub : Hub
 
         connectedClient.StreamWriter.AutoFlush = true;
 
-        DateTime serverStartupDatetime = NetworkTools.StartupDateTime;
-        string serverStartupTime = serverStartupDatetime.ToString("yyyy-MM-dd HH:mm:ss.fff");
-
-        var initCmd = new InitClientCmd(availableId, serverStartupTime, Time.fixedDeltaTime);
+        var initCmd = new InitClientCmd(availableId);
 
         SendCommandToClient(initCmd, connectedClient);
 
@@ -127,7 +124,7 @@ public class ServerHub : Hub
         }
     }
 
-    public void SendCommandToClient(ICommand cmd, NetworkClient client)
+    public async void SendCommandToClient(ICommand cmd, NetworkClient client)
     {
         var data = CommandToString(cmd);
 

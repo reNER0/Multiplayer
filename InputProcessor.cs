@@ -1,9 +1,6 @@
 ﻿using Assets.Scripts.Network.Commands;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Assets.Scripts.Network
@@ -64,8 +61,11 @@ namespace Assets.Scripts.Network
                 objectInputPair.Key.Input(objectInputPair.Value);
             }
 
-            // Simulate all physics
-            Physics.Simulate(Time.fixedDeltaTime);
+            if (NetworkSettings.MultiplayerType == MultiplayerType.Physics)
+            {
+                // Simulate all physics
+                Physics.Simulate(Time.fixedDeltaTime);
+            }
 
             // Sync every rigidbody
             foreach (var physicsObject in objectInputPairs)

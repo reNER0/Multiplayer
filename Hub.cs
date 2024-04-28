@@ -1,4 +1,5 @@
 using Assets.Scripts.Network.Commands;
+using Assets.Scripts.Network.DataCompressing;
 using System;
 using UnityEngine;
 
@@ -15,7 +16,7 @@ namespace Assets.Scripts.Network
         };
 
 
-        private IDataCompressor compressor = new GZipDataCompressor();
+        private IDataCompressor compressor = new BypassDataCompressor();
 
 
         protected string CommandToString(ICommand cmd)

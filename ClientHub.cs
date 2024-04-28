@@ -19,22 +19,26 @@ public class ClientHub : Hub
     private static StreamReader _streamReader;
     private static StreamWriter _streamWriter;
 
-    private static int ping = int.MaxValue;
-    private DateTime lastPingSendTime = DateTime.Now;
+    private static float ping = int.MaxValue;
+    private static DateTime lastPingSentTime = DateTime.Now;
 
     private Thread _serverListenerThread;
     private ConcurrentQueue<ICommand> _cmds = new();
     private bool _disposed = false;
 
 
-    public static int Ping => ping;
+    public static float Ping => ping;
+    public static DateTime LastPingSentTime => lastPingSentTime;
 
 
     private void Awake()
     {
+        // TODO : remove this or use
+        /*
 #if UNITY_SERVER
             return;
 #endif
+        */
 
         Application.runInBackground = true;
 
@@ -43,9 +47,7 @@ public class ClientHub : Hub
         NetworkBus.OnPerformCommand += PerformCommand;
         NetworkBus.OnCommandSendToServer += SendCommandToServer;
 
-        NetworkBus.OnPongReceived += SendPing;
-
-        Application.runInBackground = true;
+        NetworkBus.OnPingUpdated += OnPingUpdated;
     }
 
     public async void PerformCommand(ICommand cmd)
@@ -156,15 +158,19 @@ public class ClientHub : Hub
         }
     }
 
-    private async void SendPing()
+    private async void OnPingUpdated(int newPing)
     {
-        ping = (int)(DateTime.Now - lastPingSendTime).TotalMilliseconds;
-        NetworkBus.OnPingUpdated?.Invoke(ping);
+        ping = newPing;
 
         // Delay between pings;
         await Task.Delay(pingDelayInMilliseconds);
 
-        lastPingSendTime = DateTime.Now;
+        SendPing();
+    }
+
+    private void SendPing()
+    {
+        lastPingSentTime = DateTime.Now;
         SendCommandToServer(new PingCmd());
     }
 
@@ -178,7 +184,7 @@ public class ClientHub : Hub
         NetworkBus.OnPerformCommand -= PerformCommand;
         NetworkBus.OnCommandSendToServer -= SendCommandToServer;
 
-        NetworkBus.OnPongReceived -= SendPing;
+        NetworkBus.OnPingUpdated -= OnPingUpdated;
     }
 
     public void Update()

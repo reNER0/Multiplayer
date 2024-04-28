@@ -17,8 +17,13 @@ public class PhysicsObject : Predictable
     {
         base.Start();
 
-        if (!NetworkRepository.IsServer)
-            serverStateTransform.parent = null;
+        if (!NetworkRepository.IsCurrentClientOwnerOfObject(gameObject))
+        {
+            Destroy(serverStateTransform.gameObject);
+            return;
+        }
+
+        serverStateTransform.parent = null;
     }
 
     public override void Input(PlayerInputs playerInputs) { }
@@ -68,8 +73,20 @@ public class PhysicsObject : Predictable
             return;
         }
 
+
+        if (!NetworkRepository.IsCurrentClientOwnerOfObject(gameObject))
+        {
+            Rigidbody.position = serverState.Position;
+            Rigidbody.rotation = serverState.Rotation;
+            Rigidbody.velocity = serverState.Velocity;
+            Rigidbody.angularVelocity = serverState.RotationVelocity;
+            return;
+        }
+
+
         serverStateTransform.position = serverState.Position;
         serverStateTransform.rotation = serverState.Rotation;
+
 
         var localState = States.FirstOrDefault(x => x?.Tick == serverState.Tick);
         
