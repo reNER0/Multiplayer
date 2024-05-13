@@ -40,9 +40,11 @@ public abstract class Predictable : MonoBehaviour
 
             var input = new PlayerInputs(inputX, inputY, previewTick);
 
+            // Client prediction
             if (!NetworkRepository.IsServer)
             {
                 Input(input);
+                // Maybe extrapolate other players here
 
                 if (NetworkSettings.MultiplayerType == MultiplayerType.Physics)
                 {
