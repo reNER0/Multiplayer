@@ -19,6 +19,8 @@ namespace Assets.Scripts.Network.Commands
             NetworkRepository.SetClientId(newClientId);
 
             Debug.Log($"Init cmd: {newClientId}");
+
+            ClientHub.SendPing();
         }
     }
 }

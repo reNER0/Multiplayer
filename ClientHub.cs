@@ -130,8 +130,6 @@ public class ClientHub : Hub
 
     private async void ListenServerLoop()
     {
-        SendPing();
-
         while (!_disposed)
         {
             try
@@ -168,10 +166,10 @@ public class ClientHub : Hub
         SendPing();
     }
 
-    private void SendPing()
+    public static void SendPing()
     {
         lastPingSentTime = DateTime.Now;
-        SendCommandToServer(new PingCmd());
+        NetworkBus.OnCommandSendToServer?.Invoke(new PingCmd());
     }
 
     private void OnDestroy()

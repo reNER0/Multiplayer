@@ -17,7 +17,7 @@ namespace Assets.Scripts.Network.Commands
 
         public void Execute()
         {
-            var predictable = NetworkRepository.NetworkObjectById.First(x => x.Value.OwnerId == senderId).Value.GameObject.GetComponent<PhysicsObject>();
+            var predictable = NetworkRepository.NetworkObjectById.First(x => x.Value.OwnerId == senderId).Value.GameObject.GetComponent<Predictable>();
 
             if (predictable == null)
                 return;
