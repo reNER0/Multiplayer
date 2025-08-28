@@ -35,8 +35,12 @@ public abstract class Predictable : MonoBehaviour
         {
             previewTick++;
 
+            // TODO : refactor inputs summary
             var inputX = UnityEngine.Input.GetAxis("Horizontal");
             var inputY = UnityEngine.Input.GetAxis("Vertical");
+
+            inputX += ControlButtonsUI.HorizontalInput;
+            inputY += ControlButtonsUI.VerticalInput;
 
             var input = new PlayerInputs(inputX, inputY, previewTick);
 
