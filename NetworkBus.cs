@@ -17,5 +17,8 @@ public static class NetworkBus
     public static Action<Predictable, PlayerInputs> OnPredictableInput;
     public static Action<Predictable> OnPredictableSpawned;
 
+    // TODO : maybe need to move this
+    public static Action<State> OnStateChanged;
+
     public static Action<int> OnPingUpdated;
 }
