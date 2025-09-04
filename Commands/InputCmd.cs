@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using UnityEngine;
 
 namespace Assets.Scripts.Network.Commands
@@ -17,12 +16,7 @@ namespace Assets.Scripts.Network.Commands
 
         public void Execute()
         {
-            var predictable = NetworkRepository.NetworkObjectById.First(x => x.Value.OwnerId == senderId).Value.GameObject.GetComponent<Predictable>();
-
-            if (predictable == null)
-                return;
-
-            InputProcessor.AddInput(predictable, playerInputs);
+            InputProcessor.AddInput(senderId, playerInputs);
         }
     }
 }

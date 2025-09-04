@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using UnityEngine;
 
 namespace Assets.Scripts.Network.Commands
@@ -27,9 +28,21 @@ namespace Assets.Scripts.Network.Commands
         {
             var gameObject = (GameObject)GameObject.Instantiate(Resources.Load(_prefabName), _position, _rotation);
 
-            var networkObject = new NetworkObject(gameObject, _ownerId);
+            var networkObject = new NetworkObject(gameObject.GetComponent<Predictable>());
 
-            NetworkRepository.NetworkObjectById.Add(NetworkRepository.GetAvailableNetworkObjectId(), networkObject);
+            NetworkRepository.NetworkObjectById.Add(networkObject);
+
+
+            if (NetworkRepository.IsServer && NetworkRepository.CurrentCliendId != _ownerId)
+            {
+                NetworkRepository.ConnectedClients.First(x => x.ClientId == _ownerId).ClientObjectId = networkObject.Id;
+            }
+
+
+            if (_ownerId == NetworkRepository.CurrentCliendId)
+            {
+                NetworkRepository.SetClientObjectId(networkObject.Id);
+            }
         }
     }
 }

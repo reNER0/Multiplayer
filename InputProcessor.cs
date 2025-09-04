@@ -7,7 +7,7 @@ namespace Assets.Scripts.Network
 {
     public class InputProcessor : MonoBehaviour
     {
-        private static Dictionary<Predictable, List<PlayerInputs>> objectInputsPairs = new();
+        private static Dictionary<int, List<PlayerInputs>> inputsByPlayerId = new();
 
         private static int processTick;
 
@@ -15,14 +15,14 @@ namespace Assets.Scripts.Network
         public static int ProcessTick => processTick;
 
 
-        public static void AddInput(Predictable physicsObject, PlayerInputs playerInputs)
+        public static void AddInput(int playerId, PlayerInputs playerInputs)
         {
-            if (!objectInputsPairs.ContainsKey(physicsObject))
+            if (!inputsByPlayerId.ContainsKey(playerId))
             {
-                objectInputsPairs.Add(physicsObject, new());
+                inputsByPlayerId.Add(playerId, new());
             }
 
-            objectInputsPairs[physicsObject].Add(playerInputs);
+            inputsByPlayerId[playerId].Add(playerInputs);
 
             CheckForMatch();
         }
@@ -32,7 +32,7 @@ namespace Assets.Scripts.Network
         {
             var outOfMaximumPing = (NetworkTime.CurrentTick - processTick) > NetworkSettings.MaximumPingInTicks;
 
-            var combo = objectInputsPairs.All(x => x.Value.Any(x => x.Tick == processTick + 1)) && (objectInputsPairs.Count > 0);
+            var combo = inputsByPlayerId.All(x => x.Value.Any(x => x.Tick == processTick + 1)) && (inputsByPlayerId.Count > 0);
 
             if (outOfMaximumPing || combo)
             {
@@ -47,7 +47,7 @@ namespace Assets.Scripts.Network
         private static void ProcessOnTick(int tick)
         {
             // Collect all inputs at tick
-            var objectInputPairs = objectInputsPairs.ToDictionary(x => x.Key, y => y.Value.FirstOrDefault(x => x.Tick == tick));
+            var objectInputPairs = inputsByPlayerId.ToDictionary(x => x.Key, y => y.Value.FirstOrDefault(x => x.Tick == tick));
 
             // Apply Inputs, forces, etc
             foreach (var objectInputPair in objectInputPairs)
@@ -57,8 +57,19 @@ namespace Assets.Scripts.Network
                 if (input == null)
                     continue;
 
-                
-                objectInputPair.Key.Input(objectInputPair.Value);
+                int clientId = objectInputPair.Key;
+                NetworkClient client = NetworkRepository.ConnectedClients.FirstOrDefault(x => x.ClientId == clientId);
+
+                int clientObjectId = NetworkRepository.CurrentObjectId;
+                if (client != null)
+                    clientObjectId = client.ClientObjectId;
+
+                var predictable = NetworkRepository.NetworkObjectById.FirstOrDefault(x => x.Id == clientObjectId).Predictable;
+
+                if (predictable == null)
+                    continue;
+
+                predictable.Input(objectInputPair.Value);
             }
 
             if (NetworkSettings.MultiplayerType == MultiplayerType.Physics)
@@ -70,18 +81,28 @@ namespace Assets.Scripts.Network
             // Sync every rigidbody
             foreach (var physicsObject in objectInputPairs)
             {
-                var objectId = NetworkRepository.GetGameObjectsId(physicsObject.Key.gameObject);
+                int clientId = physicsObject.Key;
+                NetworkClient client = NetworkRepository.ConnectedClients.FirstOrDefault(x => x.ClientId == clientId);
+
+                int clientObjectId = NetworkRepository.CurrentObjectId;
+                if (client != null)
+                    clientObjectId = client.ClientObjectId;
+
+                var predictable = NetworkRepository.NetworkObjectById.FirstOrDefault(x => x.Id == clientObjectId).Predictable;
+
+                if (predictable == null)
+                    continue;
 
                 var syncCmd = new SyncPredictableCmd(
-                    objectId,
-                    JsonUtility.ToJson(physicsObject.Key.GetState())
+                    clientObjectId,
+                    JsonUtility.ToJson(predictable.GetState())
                     );
 
                 NetworkBus.OnCommandSendToClients(syncCmd);
             }
 
             // Clear all old tick inputs
-            foreach (var objectInputsPair in objectInputsPairs)
+            foreach (var objectInputsPair in inputsByPlayerId)
             {
                 objectInputsPair.Value.RemoveAll(x => x.Tick <= tick);
             }

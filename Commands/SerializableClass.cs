@@ -14,6 +14,8 @@ namespace Assets.Scripts.Network.Commands
         public SerializableClass()
         {
             serializedClassName = GetType().ToString();
+
+            // TODO : fix this. Can be used for hacking
             senderId = NetworkRepository.CurrentCliendId;
         }
 

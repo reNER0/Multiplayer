@@ -14,7 +14,7 @@ public class PhysicsObject : Predictable
     {
         base.Start();
 
-        if (!NetworkRepository.IsCurrentClientOwnerOfObject(gameObject))
+        if (!NetworkRepository.IsCurrentClientOwnerOfObject(this))
         {
             Destroy(serverStateTransform.gameObject);
             return;
@@ -71,7 +71,7 @@ public class PhysicsObject : Predictable
         }
 
 
-        if (!NetworkRepository.IsCurrentClientOwnerOfObject(gameObject))
+        if (!NetworkRepository.IsCurrentClientOwnerOfObject(this))
         {
             Rigidbody.MovePosition(serverState.Position);
             Rigidbody.MoveRotation(serverState.Rotation);
