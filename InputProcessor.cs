@@ -79,23 +79,11 @@ namespace Assets.Scripts.Network
             }
 
             // Sync every rigidbody
-            foreach (var physicsObject in objectInputPairs)
+            foreach (var networkObject in NetworkRepository.NetworkObjectById)
             {
-                int clientId = physicsObject.Key;
-                NetworkClient client = NetworkRepository.ConnectedClients.FirstOrDefault(x => x.ClientId == clientId);
-
-                int clientObjectId = NetworkRepository.CurrentObjectId;
-                if (client != null)
-                    clientObjectId = client.ClientObjectId;
-
-                var predictable = NetworkRepository.NetworkObjectById.FirstOrDefault(x => x.Id == clientObjectId).Predictable;
-
-                if (predictable == null)
-                    continue;
-
                 var syncCmd = new SyncPredictableCmd(
-                    clientObjectId,
-                    JsonUtility.ToJson(predictable.GetState())
+                    networkObject.Id,
+                    JsonUtility.ToJson(networkObject.Predictable.GetState())
                     );
 
                 NetworkBus.OnCommandSendToClients(syncCmd);
