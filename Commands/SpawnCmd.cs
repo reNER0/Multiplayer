@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using UnityEngine;
 
 namespace Assets.Scripts.Network.Commands
@@ -10,16 +9,13 @@ namespace Assets.Scripts.Network.Commands
         [SerializeField]
         private string _prefabName;
         [SerializeField]
-        private int _ownerId;
-        [SerializeField]
         private Vector3 _position;
         [SerializeField]
         private Quaternion _rotation;
 
-        public SpawnCmd(string prefabName, int ownerId, Vector3 position, Quaternion rotation)
+        public SpawnCmd(string prefabName, Vector3 position, Quaternion rotation)
         {
             _prefabName = prefabName;
-            _ownerId = ownerId;
             _position = position;
             _rotation = rotation;
         }
@@ -31,18 +27,6 @@ namespace Assets.Scripts.Network.Commands
             var networkObject = new NetworkObject(gameObject.GetComponent<Predictable>());
 
             NetworkRepository.NetworkObjectById.Add(networkObject);
-
-
-            if (NetworkRepository.IsServer && NetworkRepository.CurrentCliendId != _ownerId)
-            {
-                NetworkRepository.ConnectedClients.First(x => x.ClientId == _ownerId).ClientObjectId = networkObject.Id;
-            }
-
-
-            if (_ownerId == NetworkRepository.CurrentCliendId)
-            {
-                NetworkRepository.SetClientObjectId(networkObject.Id);
-            }
         }
     }
 }

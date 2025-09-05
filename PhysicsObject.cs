@@ -16,7 +16,8 @@ public class PhysicsObject : Predictable
 
         if (!NetworkRepository.IsCurrentClientOwnerOfObject(this))
         {
-            Destroy(serverStateTransform.gameObject);
+            // TODO : Fix this. Commented because of object owner is setting too late
+            //Destroy(serverStateTransform.gameObject);
             return;
         }
 

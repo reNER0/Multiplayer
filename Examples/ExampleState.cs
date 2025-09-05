@@ -28,8 +28,8 @@ public class ExampleState : State
 
     private void SpawnPlayer(NetworkClient client)
     {
-        var spawnPlayerCmd = new SpawnCmd(playerObjectName, client.ClientId, Vector3.up, Quaternion.identity);
-
+        var spawnPlayerCmd = new SpawnCmd(playerObjectName, Vector3.up, Quaternion.identity);
+        
         NetworkBus.OnPerformCommand?.Invoke(spawnPlayerCmd);
     }
 }
