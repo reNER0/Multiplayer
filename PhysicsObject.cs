@@ -8,7 +8,8 @@ public class PhysicsObject : Predictable
     public Transform serverStateTransform;
 
 
-    public RigidbodyState[] RigidbodyStates => States as RigidbodyState[];
+    protected RigidbodyState[] RigidbodyStates => States as RigidbodyState[];
+
 
     protected override void Start()
     {
