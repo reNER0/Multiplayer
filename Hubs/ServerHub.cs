@@ -22,6 +22,7 @@ public class ServerHub : Hub
         NetworkBus.OnCommandSendToServer += PerformCommand;
         NetworkBus.OnCommandSendToClient += SendCommandToClient;
         NetworkBus.OnCommandSendToClients += SendCommandToAllClients;
+        NetworkBus.OnCommandSendToClientsExcept += SendCommandToAllClientsExcept;
         NetworkBus.OnPerformCommand += PerformCommand;
 
         ConnectingClientsLoopTask();
