@@ -14,6 +14,8 @@ public class ServerHub : Hub
 
     private bool _disposed = false;
 
+    private int availableId;
+
 
     private void Awake()
     {
@@ -58,8 +60,6 @@ public class ServerHub : Hub
 
     private void AddNewClient(TcpClient client)
     {
-        var availableId = NetworkRepository.ConnectedClients.Count;
-
         var connectedClient = new NetworkClient
         {
             ClientId = availableId,
@@ -74,7 +74,7 @@ public class ServerHub : Hub
 
         SendCommandToClient(initCmd, connectedClient);
 
-        foreach (var cmd in ServerRepository.GetCommands().Where(x => x.GetType().Equals(typeof(SpawnCmd))))
+        foreach (var cmd in ServerRepository.GetCommands().Where(x => publicCommandTypes.Contains(x.GetType())))
         {
             SendCommandToClient(cmd, connectedClient);
         }
@@ -86,6 +86,8 @@ public class ServerHub : Hub
         Debug.Log($"{client.Client.RemoteEndPoint} connected!");
 
         NetworkBus.OnClientConnected?.Invoke(connectedClient);
+
+        availableId++;
     }
 
     private async void ClientReadingTask(NetworkClient client)
@@ -94,6 +96,7 @@ public class ServerHub : Hub
         {
             if (client.Client.Connected == false)
             {
+                client.Client.Close();
                 NetworkBus.OnClientDisconnected?.Invoke(client);
                 NetworkRepository.ConnectedClients.Remove(client);
                 Debug.LogError("Disconnected player: " + client.ClientId);
@@ -103,6 +106,9 @@ public class ServerHub : Hub
             var data = await client.StreamReader.ReadLineAsync();
 
             var cmd = StringToCommand(data);
+
+            if (cmd == null)
+                continue;
 
             PerformCommand(cmd);
         }
@@ -125,12 +131,25 @@ public class ServerHub : Hub
         }
     }
 
-    public async void SendCommandToClient(ICommand cmd, NetworkClient client)
+    private void HandleDisconnect(NetworkClient client, Exception reason = null)
     {
-        var data = CommandToString(cmd);
+        //client.Client.Close();
+    }
 
-        client.StreamWriter.WriteLine(data);
-        client.StreamWriter.Flush();
+
+    public void SendCommandToClient(ICommand cmd, NetworkClient client)
+    {
+        try
+        {
+            var data = CommandToString(cmd);
+
+            client.StreamWriter.WriteLine(CommandToString(cmd));
+            client.StreamWriter.Flush();
+        }
+        catch (Exception ex)
+        {
+            HandleDisconnect(client, ex);
+        }
     }
 
     public void SendCommandToAllClients(ICommand cmd)

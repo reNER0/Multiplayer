@@ -12,7 +12,13 @@ public static class NetworkRepository
 
     public static List<NetworkClient> ConnectedClients = new List<NetworkClient>();
 
-    public static int GetAvailableNetworkObjectId() => NetworkObjectById.Count;
+    public static int GetAvailableNetworkObjectId()
+    {
+        if (!NetworkObjectById.Any())
+            return 0;
+
+        return NetworkObjectById.Select(x => x.Id).Max() + 1;
+    }
 
 
     public static void SetClientId(int id)
