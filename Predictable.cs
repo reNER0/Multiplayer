@@ -1,15 +1,17 @@
 ﻿using Assets.Scripts.Network.Commands;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public abstract class Predictable : MonoBehaviour
 {
-    public PredictableState[] States = new PredictableState[1024];
+    protected PredictableState[] States = new PredictableState[1024];
 
     public PlayerInputs lastAppliedInputs;
 
 
-    private static int previewTick;
+
+
 
 
     protected virtual void Start()
@@ -25,43 +27,6 @@ public abstract class Predictable : MonoBehaviour
         NetworkBus.OnInputsSetToTick -= SetInputByTick;
         NetworkBus.OnAllStatesSaved -= SaveCurrentState;
     }
-
-    protected virtual void Update()
-    {
-        if (!NetworkRepository.IsCurrentClientOwnerOfObject(gameObject))
-            return;
-
-        while (previewTick < NetworkTime.CurrentTick)
-        {
-            previewTick++;
-
-            // TODO : refactor inputs summary
-            var inputX = UnityEngine.Input.GetAxis("Horizontal");
-            var inputY = UnityEngine.Input.GetAxis("Vertical");
-
-            inputX += ControlButtonsUI.HorizontalInput;
-            inputY += ControlButtonsUI.VerticalInput;
-
-            var input = new PlayerInputs(inputX, inputY, previewTick);
-
-            // Client prediction
-            if (!NetworkRepository.IsServer)
-            {
-                Input(input);
-                // Maybe extrapolate other players here
-
-                if (NetworkSettings.MultiplayerType == MultiplayerType.Physics)
-                {
-                    Physics.Simulate(Time.fixedDeltaTime);
-                }
-
-                SaveCurrentState(previewTick);
-            }
-
-            NetworkBus.OnCommandSendToServer?.Invoke(new InputCmd(input));
-        }
-    }
-
 
     public abstract void ApplyState(PredictableState state);
 
