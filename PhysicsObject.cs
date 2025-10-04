@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Assets.Scripts.Network;
 using UnityEngine;
@@ -104,5 +105,27 @@ public class PhysicsObject : Predictable
 
             return;
         }
+
+        SmoothSync(localState as RigidbodyState, serverState);
+    }
+
+    protected void SmoothSync(RigidbodyState localState, RigidbodyState serverState)
+    {
+        var positionDelta = serverState.Position - localState.Position;
+        var rotationDelta = serverState.Rotation * Quaternion.Inverse(localState.Rotation);
+        var velocityDelta = serverState.Velocity - localState.Velocity;
+        var angularVelocityDelta = serverState.RotationVelocity - localState.RotationVelocity;
+
+        var tickTimeInSeconds = Time.fixedDeltaTime;
+        var pingTimeInSeconds = ClientHub.Ping / 1000f;
+
+        var ticksToSmooth = Math.Max(pingTimeInSeconds, tickTimeInSeconds) / tickTimeInSeconds;
+
+        var interpolationValue = (1 / ticksToSmooth) * NetworkSettings.SyncForce;
+
+        Rigidbody.MovePosition(Vector3.Lerp(Rigidbody.position, Rigidbody.position + positionDelta, interpolationValue));
+        Rigidbody.MoveRotation(Quaternion.Lerp(Rigidbody.rotation, rotationDelta * Rigidbody.rotation, interpolationValue));
+        Rigidbody.velocity = Vector3.Lerp(Rigidbody.velocity, Rigidbody.velocity + velocityDelta, interpolationValue);
+        Rigidbody.angularVelocity = Vector3.Lerp(Rigidbody.angularVelocity, Rigidbody.angularVelocity + angularVelocityDelta, interpolationValue);
     }
 }
