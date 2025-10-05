@@ -15,6 +15,17 @@ namespace Assets.Scripts.Network
         public static int ProcessTick => processTick;
 
 
+        private void Awake()
+        {
+            NetworkBus.OnClientDisconnected += OnClientDisconnected;
+        }
+
+        private void OnDestroy()
+        {
+            NetworkBus.OnClientDisconnected -= OnClientDisconnected;
+        }
+
+
         public static void AddInput(int playerId, PlayerInputs playerInputs)
         {
             if (!inputsByPlayerId.ContainsKey(playerId))
@@ -47,17 +58,43 @@ namespace Assets.Scripts.Network
         private static void ProcessOnTick(int tick)
         {
             // Collect all inputs at tick
-            var objectInputPairs = inputsByPlayerId.ToDictionary(x => x.Key, y => y.Value.FirstOrDefault(x => x.Tick == tick));
+            var playerInputPairs = inputsByPlayerId.ToDictionary(x => x.Key, y => y.Value.FirstOrDefault(x => x.Tick == tick));
+
+            var objectInputPairs = playerInputPairs.ToDictionary(x => GetPlayerObjectId(x.Key), y => y.Value);
+
+            // Sorting first player objects then other objects
+            var allObjects = NetworkRepository.NetworkObjectById.OrderByDescending(x => objectInputPairs.ContainsKey(x.Id));
+
+
+            foreach (var predictable in allObjects.Select(x => x.Predictable))
+                predictable.inputSeam = false;
 
             // Apply Inputs, forces, etc
-            foreach (var objectInputPair in objectInputPairs)
+            foreach (var networkObject in allObjects)
             {
-                var input = objectInputPair.Value;
+                // if input already applied - skip
+                if (networkObject.Predictable.inputSeam)
+                    continue;
+
+                if (objectInputPairs.ContainsKey(networkObject.Id) && objectInputPairs[networkObject.Id] != null)
+                {
+                    networkObject.Predictable.Input(objectInputPairs[networkObject.Id]);
+                    continue;
+                }
+
+                networkObject.Predictable.Input(new PlayerInputs(0, 0, false, tick));
+            }
+
+            /*
+            // Apply Inputs, forces, etc
+            foreach (var playerInputPair in playerInputPairs)
+            {
+                var input = playerInputPair.Value;
 
                 if (input == null)
                     continue;
 
-                int clientId = objectInputPair.Key;
+                int clientId = playerInputPair.Key;
                 NetworkClient client = NetworkRepository.ConnectedClients.FirstOrDefault(x => x.ClientId == clientId);
 
                 int clientObjectId = NetworkRepository.CurrentObjectId;
@@ -69,9 +106,9 @@ namespace Assets.Scripts.Network
                 if (predictable == null)
                     continue;
 
-                predictable.Input(objectInputPair.Value);
+                predictable.Input(playerInputPair.Value);
             }
-
+            */
             if (NetworkSettings.MultiplayerType == MultiplayerType.Physics)
             {
                 // Simulate all physics
@@ -94,6 +131,21 @@ namespace Assets.Scripts.Network
             {
                 objectInputsPair.Value.RemoveAll(x => x.Tick <= tick);
             }
+        }
+
+
+        private static int GetPlayerObjectId(int playerId)
+        {
+            if (NetworkRepository.IsServer)
+                return NetworkRepository.CurrentObjectId;
+
+            return NetworkRepository.ConnectedClients.FirstOrDefault(x => x.ClientId == playerId)?.ClientObjectId ?? -1;
+        }
+
+
+        private static void OnClientDisconnected(NetworkClient client)
+        {
+            inputsByPlayerId.Remove(client.ClientId);
         }
     }
 }

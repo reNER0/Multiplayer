@@ -26,7 +26,10 @@ public class PhysicsObject : Predictable
         serverStateTransform.parent = null;
     }
 
-    public override void Input(PlayerInputs playerInputs) { }
+    public override void Input(PlayerInputs playerInputs)
+    {
+        inputSeam = true;
+    }
 
     public override void ApplyState(PredictableState state)
     {

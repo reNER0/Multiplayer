@@ -5,6 +5,9 @@ using UnityEngine.InputSystem;
 
 public abstract class Predictable : MonoBehaviour
 {
+    // TODO : Remove this!!!
+    public bool inputSeam;
+
     protected PredictableState[] States = new PredictableState[1024];
 
     public PlayerInputs lastAppliedInputs;
