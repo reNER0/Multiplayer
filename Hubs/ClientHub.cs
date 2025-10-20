@@ -33,13 +33,6 @@ public class ClientHub : Hub
 
     private void Awake()
     {
-        // TODO : remove this or use
-        /*
-#if UNITY_SERVER
-            return;
-#endif
-        */
-
         Application.runInBackground = true;
 
         ConnectClient();

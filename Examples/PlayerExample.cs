@@ -4,6 +4,8 @@ public class PlayerExample : PhysicsObject
 {
     public override void Input(PlayerInputs playerInputs)
     {
+        base.Input(playerInputs);
+
         Rigidbody.AddTorque(Vector3.right * playerInputs.Y * 50f, ForceMode.Acceleration);
         Rigidbody.AddTorque(-Vector3.forward * playerInputs.X * 50f, ForceMode.Acceleration);
 

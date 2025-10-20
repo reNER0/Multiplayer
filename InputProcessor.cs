@@ -7,7 +7,7 @@ namespace Assets.Scripts.Network
 {
     public class InputProcessor : MonoBehaviour
     {
-        private static Dictionary<Predictable, List<PlayerInputs>> objectInputsPairs = new();
+        private static Dictionary<int, List<PlayerInputs>> inputsByPlayerId = new();
 
         private static int processTick;
 
@@ -15,14 +15,25 @@ namespace Assets.Scripts.Network
         public static int ProcessTick => processTick;
 
 
-        public static void AddInput(Predictable physicsObject, PlayerInputs playerInputs)
+        private void Awake()
         {
-            if (!objectInputsPairs.ContainsKey(physicsObject))
+            NetworkBus.OnClientDisconnected += OnClientDisconnected;
+        }
+
+        private void OnDestroy()
+        {
+            NetworkBus.OnClientDisconnected -= OnClientDisconnected;
+        }
+
+
+        public static void AddInput(int playerId, PlayerInputs playerInputs)
+        {
+            if (!inputsByPlayerId.ContainsKey(playerId))
             {
-                objectInputsPairs.Add(physicsObject, new());
+                inputsByPlayerId.Add(playerId, new());
             }
 
-            objectInputsPairs[physicsObject].Add(playerInputs);
+            inputsByPlayerId[playerId].Add(playerInputs);
 
             CheckForMatch();
         }
@@ -32,7 +43,7 @@ namespace Assets.Scripts.Network
         {
             var outOfMaximumPing = (NetworkTime.CurrentTick - processTick) > NetworkSettings.MaximumPingInTicks;
 
-            var combo = objectInputsPairs.All(x => x.Value.Any(x => x.Tick == processTick + 1)) && (objectInputsPairs.Count > 0);
+            var combo = inputsByPlayerId.All(x => x.Value.Any(x => x.Tick == processTick + 1)) && (inputsByPlayerId.Count > 0);
 
             if (outOfMaximumPing || combo)
             {
@@ -47,20 +58,57 @@ namespace Assets.Scripts.Network
         private static void ProcessOnTick(int tick)
         {
             // Collect all inputs at tick
-            var objectInputPairs = objectInputsPairs.ToDictionary(x => x.Key, y => y.Value.FirstOrDefault(x => x.Tick == tick));
+            var playerInputPairs = inputsByPlayerId.ToDictionary(x => x.Key, y => y.Value.FirstOrDefault(x => x.Tick == tick));
+
+            var objectInputPairs = playerInputPairs.ToDictionary(x => GetPlayerObjectId(x.Key), y => y.Value);
+
+            // Sorting first player objects then other objects
+            var allObjects = NetworkRepository.NetworkObjectById.OrderByDescending(x => objectInputPairs.ContainsKey(x.Id));
+
+
+            foreach (var predictable in allObjects.Select(x => x.Predictable))
+                predictable.inputSeam = false;
 
             // Apply Inputs, forces, etc
-            foreach (var objectInputPair in objectInputPairs)
+            foreach (var networkObject in allObjects)
             {
-                var input = objectInputPair.Value;
+                // if input already applied - skip
+                if (networkObject.Predictable.inputSeam)
+                    continue;
+
+                if (objectInputPairs.ContainsKey(networkObject.Id) && objectInputPairs[networkObject.Id] != null)
+                {
+                    networkObject.Predictable.Input(objectInputPairs[networkObject.Id]);
+                    continue;
+                }
+
+                networkObject.Predictable.Input(new PlayerInputs(0, 0, false, tick));
+            }
+
+            /*
+            // Apply Inputs, forces, etc
+            foreach (var playerInputPair in playerInputPairs)
+            {
+                var input = playerInputPair.Value;
 
                 if (input == null)
                     continue;
 
-                
-                objectInputPair.Key.Input(objectInputPair.Value);
-            }
+                int clientId = playerInputPair.Key;
+                NetworkClient client = NetworkRepository.ConnectedClients.FirstOrDefault(x => x.ClientId == clientId);
 
+                int clientObjectId = NetworkRepository.CurrentObjectId;
+                if (client != null)
+                    clientObjectId = client.ClientObjectId;
+
+                var predictable = NetworkRepository.NetworkObjectById.FirstOrDefault(x => x.Id == clientObjectId).Predictable;
+
+                if (predictable == null)
+                    continue;
+
+                predictable.Input(playerInputPair.Value);
+            }
+            */
             if (NetworkSettings.MultiplayerType == MultiplayerType.Physics)
             {
                 // Simulate all physics
@@ -68,23 +116,36 @@ namespace Assets.Scripts.Network
             }
 
             // Sync every rigidbody
-            foreach (var physicsObject in objectInputPairs)
+            foreach (var networkObject in NetworkRepository.NetworkObjectById)
             {
-                var objectId = NetworkRepository.GetGameObjectsId(physicsObject.Key.gameObject);
-
                 var syncCmd = new SyncPredictableCmd(
-                    objectId,
-                    JsonUtility.ToJson(physicsObject.Key.GetState())
+                    networkObject.Id,
+                    JsonUtility.ToJson(networkObject.Predictable.GetState())
                     );
 
                 NetworkBus.OnCommandSendToClients(syncCmd);
             }
 
             // Clear all old tick inputs
-            foreach (var objectInputsPair in objectInputsPairs)
+            foreach (var objectInputsPair in inputsByPlayerId)
             {
                 objectInputsPair.Value.RemoveAll(x => x.Tick <= tick);
             }
+        }
+
+
+        private static int GetPlayerObjectId(int playerId)
+        {
+            if (NetworkRepository.CurrentCliendId == playerId)
+                return NetworkRepository.CurrentObjectId;
+
+            return NetworkRepository.ConnectedClients.FirstOrDefault(x => x.ClientId == playerId)?.ClientObjectId ?? -1;
+        }
+
+
+        private static void OnClientDisconnected(NetworkClient client)
+        {
+            inputsByPlayerId.Remove(client.ClientId);
         }
     }
 }

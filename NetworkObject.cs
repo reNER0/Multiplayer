@@ -4,12 +4,12 @@ using UnityEngine;
 [Serializable]
 public class NetworkObject
 {
-    public GameObject GameObject;
-    public int OwnerId;
+    public int Id;
+    public Predictable Predictable;
 
-    public NetworkObject(GameObject gameObject, int ownerId)
+    public NetworkObject(Predictable predictable)
     {
-        this.GameObject = gameObject;
-        this.OwnerId = ownerId;
+        Id = NetworkRepository.GetAvailableNetworkObjectId();
+        Predictable = predictable;
     }
 }

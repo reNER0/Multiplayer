@@ -1,6 +1,5 @@
 ﻿using Assets.Scripts.Network.Commands;
 using System;
-using UnityEngine;
 
 public static class NetworkBus
 {
@@ -8,6 +7,7 @@ public static class NetworkBus
     public static Action<ICommand> OnPerformCommand;
     public static Action<ICommand> OnCommandSendToServer;
     public static Action<ICommand, NetworkClient> OnCommandSendToClient;
+    public static Action<ICommand, NetworkClient> OnCommandSendToClientsExcept;
     public static Action<ICommand> OnCommandSendToClients;
     public static Action<NetworkClient> OnClientConnected;
     public static Action<NetworkClient> OnClientDisconnected;
@@ -16,6 +16,9 @@ public static class NetworkBus
 
     public static Action<Predictable, PlayerInputs> OnPredictableInput;
     public static Action<Predictable> OnPredictableSpawned;
+
+    // TODO : maybe need to move this
+    public static Action<State> OnStateChanged;
 
     public static Action<int> OnPingUpdated;
 }

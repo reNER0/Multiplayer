@@ -13,6 +13,7 @@ namespace Assets.Scripts.Network
 
         protected static readonly Type[] publicCommandTypes = {
             typeof(SpawnCmd),
+            typeof(DestroyCmd),
         };
 
 
@@ -30,12 +31,20 @@ namespace Assets.Scripts.Network
 
         protected ICommand StringToCommand(string msg)
         {
-            var decompressedData = compressor.Decompress(msg);
+            try
+            {
+                var decompressedData = compressor.Decompress(msg);
 
-            SerializableClass ctype = JsonUtility.FromJson<SerializableClass>(decompressedData);
-            Type t = Type.GetType(ctype.ClassName);
-            ICommand gc = (ICommand)JsonUtility.FromJson(decompressedData, t);
-            return gc;
+                SerializableClass ctype = JsonUtility.FromJson<SerializableClass>(decompressedData);
+                Type t = Type.GetType(ctype.ClassName);
+                ICommand gc = (ICommand)JsonUtility.FromJson(decompressedData, t);
+                return gc;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Error while parsing command! " + e.Message);
+                return null;
+            }
         }
     }
 }

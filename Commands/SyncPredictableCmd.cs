@@ -19,7 +19,7 @@ namespace Assets.Scripts.Network.Commands
 
         public void Execute()
         {
-            var gameObject = NetworkRepository.NetworkObjectById[objectId].GameObject;
+            var gameObject = NetworkRepository.NetworkObjectById[objectId].Predictable;
 
             var predictable = gameObject.GetComponent<Predictable>();
 
