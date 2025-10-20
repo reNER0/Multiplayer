@@ -136,7 +136,7 @@ namespace Assets.Scripts.Network
 
         private static int GetPlayerObjectId(int playerId)
         {
-            if (NetworkRepository.IsServer)
+            if (NetworkRepository.CurrentCliendId == playerId)
                 return NetworkRepository.CurrentObjectId;
 
             return NetworkRepository.ConnectedClients.FirstOrDefault(x => x.ClientId == playerId)?.ClientObjectId ?? -1;

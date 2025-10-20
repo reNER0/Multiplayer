@@ -29,6 +29,7 @@ namespace Assets.Scripts.Network.Commands
             if (_playerId == NetworkRepository.CurrentCliendId)
             {
                 NetworkRepository.SetClientObjectId(_objectId);
+                PlayerCamera.Instance.SetTarget((Player)NetworkRepository.NetworkObjectById.First(x => x.Id == _objectId).Predictable);
             }
         }
     }
