@@ -96,10 +96,7 @@ public class ServerHub : Hub
         {
             if (client.Client.Connected == false)
             {
-                client.Client.Close();
-                NetworkBus.OnClientDisconnected?.Invoke(client);
-                NetworkRepository.ConnectedClients.Remove(client);
-                Debug.LogError("Disconnected player: " + client.ClientId);
+                HandleDisconnect(client);
                 return;
             }
 
@@ -108,7 +105,11 @@ public class ServerHub : Hub
             var cmd = StringToCommand(data);
 
             if (cmd == null)
-                continue;
+            {
+                Debug.LogError("Can`t parse Command!");
+                HandleDisconnect(client);
+                return;
+            }
 
             PerformCommand(cmd);
         }
@@ -133,7 +134,12 @@ public class ServerHub : Hub
 
     private void HandleDisconnect(NetworkClient client, Exception reason = null)
     {
-        //client.Client.Close();
+        if (reason != null)
+            Debug.LogError(reason);
+
+        NetworkBus.OnClientDisconnected?.Invoke(client);
+        NetworkRepository.ConnectedClients.Remove(client);
+        Debug.LogError("Disconnected player: " + client.ClientId);
     }
 
 
