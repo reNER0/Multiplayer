@@ -11,6 +11,7 @@ public static class NetworkBus
     public static Action<ICommand> OnCommandSendToClients;
     public static Action<NetworkClient> OnClientConnected;
     public static Action<NetworkClient> OnClientDisconnected;
+    public static Action OnLocalClientDisconnected;
     public static Action<int> OnInputsSetToTick;
     public static Action<int> OnAllStatesSaved;
 

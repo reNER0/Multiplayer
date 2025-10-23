@@ -41,7 +41,10 @@ public class ClientHub : Hub
         NetworkBus.OnCommandSendToServer += SendCommandToServer;
 
         NetworkBus.OnPingUpdated += OnPingUpdated;
+
+        NetworkBus.OnLocalClientDisconnected += SceneLoader.LoadMainMenuScene;
     }
+
 
     public async void PerformCommand(ICommand cmd)
     {
@@ -132,6 +135,14 @@ public class ClientHub : Hub
                     var data = await _streamReader.ReadLineAsync();
 
                     var cmd = StringToCommand(data);
+
+                    if (cmd == null)
+                    {
+                        Debug.LogError("Can`t parse Command!");
+                        HandleDisconnect();
+                        return;
+                    }
+
                     _cmds.Enqueue(cmd);
                 }
                 else
@@ -143,10 +154,19 @@ public class ClientHub : Hub
             catch (Exception e)
             {
                 Debug.LogError(e);
-
+                HandleDisconnect();
                 return;
             }
         }
+    }
+
+    private void HandleDisconnect(Exception reason = null)
+    {
+        if (reason != null)
+            Debug.LogError(reason);
+
+        NetworkBus.OnLocalClientDisconnected?.Invoke();
+        client.Close();
     }
 
     private async void OnPingUpdated(int newPing)
@@ -176,6 +196,8 @@ public class ClientHub : Hub
         NetworkBus.OnCommandSendToServer -= SendCommandToServer;
 
         NetworkBus.OnPingUpdated -= OnPingUpdated;
+
+        NetworkBus.OnLocalClientDisconnected -= SceneLoader.LoadMainMenuScene;
     }
 
     public void Update()
