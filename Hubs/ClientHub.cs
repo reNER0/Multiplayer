@@ -30,9 +30,13 @@ public class ClientHub : Hub
     public static float Ping => ping;
     public static DateTime LastPingSentTime => lastPingSentTime;
 
+    private static SynchronizationContext unityContext;
+
 
     private void Awake()
     {
+        unityContext = SynchronizationContext.Current;
+
         Application.runInBackground = true;
 
         ConnectClient();
@@ -165,7 +169,7 @@ public class ClientHub : Hub
         if (reason != null)
             Debug.LogError(reason);
 
-        NetworkBus.OnLocalClientDisconnected?.Invoke();
+        unityContext.Post(_ => NetworkBus.OnLocalClientDisconnected?.Invoke(), null);
         client.Close();
     }
 
