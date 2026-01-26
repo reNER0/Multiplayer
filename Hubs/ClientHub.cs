@@ -46,7 +46,7 @@ public class ClientHub : Hub
 
         NetworkBus.OnPingUpdated += OnPingUpdated;
 
-        NetworkBus.OnLocalClientDisconnected += SceneLoader.LoadMainMenuScene;
+        NetworkBus.OnLocalClientDisconnected += OnDisconnect;
     }
 
 
@@ -170,7 +170,12 @@ public class ClientHub : Hub
             Debug.LogError(reason);
 
         unityContext.Post(_ => NetworkBus.OnLocalClientDisconnected?.Invoke(), null);
+    }
+
+    public static void OnDisconnect()
+    {
         client.Close();
+        SceneLoader.LoadMainMenuScene();
     }
 
     private async void OnPingUpdated(int newPing)
@@ -201,7 +206,7 @@ public class ClientHub : Hub
 
         NetworkBus.OnPingUpdated -= OnPingUpdated;
 
-        NetworkBus.OnLocalClientDisconnected -= SceneLoader.LoadMainMenuScene;
+        NetworkBus.OnLocalClientDisconnected -= OnDisconnect;
     }
 
     public void Update()
