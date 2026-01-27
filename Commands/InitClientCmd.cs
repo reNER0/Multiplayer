@@ -20,6 +20,8 @@ namespace Assets.Scripts.Network.Commands
 
             Debug.Log($"Init cmd: {newClientId}");
 
+            PlayerInputController.SetPreviewTick(NetworkTime.CurrentTick);
+
             ClientHub.SendPing();
         }
     }

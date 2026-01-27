@@ -15,8 +15,14 @@ namespace Assets.Scripts.Network
         public static int ProcessTick => processTick;
 
 
+        private static TickRecorder TickRecorder;
+
+
         private void Awake()
         {
+            TickRecorder = gameObject.AddComponent<TickRecorder>();
+            TickRecorder.SetIsServer();
+
             NetworkBus.OnClientDisconnected += OnClientDisconnected;
         }
 
@@ -131,6 +137,8 @@ namespace Assets.Scripts.Network
             {
                 objectInputsPair.Value.RemoveAll(x => x.Tick <= tick);
             }
+
+            TickRecorder.RecordTick(tick);
         }
 
 
