@@ -126,9 +126,11 @@ public class PhysicsObject : Predictable
 
         var interpolationValue = (1 / ticksToSmooth) * NetworkSettings.SyncForce;
 
-        Rigidbody.MovePosition(Vector3.Lerp(Rigidbody.position, Rigidbody.position + positionDelta, interpolationValue));
-        Rigidbody.MoveRotation(Quaternion.Lerp(Rigidbody.rotation, rotationDelta * Rigidbody.rotation, interpolationValue));
-        Rigidbody.velocity = Vector3.Lerp(Rigidbody.velocity, Rigidbody.velocity + velocityDelta, interpolationValue);
-        Rigidbody.angularVelocity = Vector3.Lerp(Rigidbody.angularVelocity, Rigidbody.angularVelocity + angularVelocityDelta, interpolationValue);
+        Rigidbody.MovePosition(Vector3.Lerp(transform.position, transform.position + positionDelta, interpolationValue));
+        Rigidbody.MoveRotation(Quaternion.Lerp(transform.rotation, rotationDelta * transform.rotation, interpolationValue));
+
+        // TODO : fix smooth sync for velocities
+        //Rigidbody.velocity = Vector3.Lerp(Rigidbody.velocity, Rigidbody.velocity + velocityDelta, interpolationValue);
+        //Rigidbody.angularVelocity = Vector3.Lerp(Rigidbody.angularVelocity, Rigidbody.angularVelocity + angularVelocityDelta, interpolationValue);
     }
 }
