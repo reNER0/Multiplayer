@@ -20,16 +20,16 @@ namespace Assets.Scripts.Network.Commands
 
         public void Execute()
         {
-            if (NetworkRepository.IsServer && NetworkRepository.CurrentCliendId != _playerId)
+            if (NetworkRepository.Current.IsServer && NetworkRepository.Current.CurrentCliendId != _playerId)
             {
-                NetworkRepository.ConnectedClients.First(x => x.ClientId == _playerId).ClientObjectId = _objectId;
+                NetworkRepository.Current.ConnectedClients.First(x => x.ClientId == _playerId).ClientObjectId = _objectId;
             }
 
 
-            if (_playerId == NetworkRepository.CurrentCliendId)
+            if (_playerId == NetworkRepository.Current.CurrentCliendId)
             {
-                NetworkRepository.SetClientObjectId(_objectId);
-                PlayerCamera.Instance.SetTarget((Player)NetworkRepository.NetworkObjectById.First(x => x.Id == _objectId).Predictable);
+                NetworkRepository.Current.SetClientObjectId(_objectId);
+                PlayerCamera.Instance.SetTarget((Player)NetworkRepository.Current.NetworkObjectById.First(x => x.Id == _objectId).Predictable);
             }
         }
     }

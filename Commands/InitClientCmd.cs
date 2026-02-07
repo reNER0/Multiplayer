@@ -8,21 +8,26 @@ namespace Assets.Scripts.Network.Commands
     {
         [SerializeField]
         private int newClientId;
+        [SerializeField]
+        private int tick;
 
-        public InitClientCmd(int newClientId)
+        public InitClientCmd(int newClientId, int currentTick)
         {
             this.newClientId = newClientId;
+            this.tick = currentTick;
         }
 
         public void Execute()
         {
-            NetworkRepository.SetClientId(newClientId);
+            NetworkRepository.Current.SetClientId(newClientId);
 
             Debug.Log($"Init cmd: {newClientId}");
 
-            PlayerInputController.SetPreviewTick(NetworkTime.CurrentTick);
-
             ClientHub.SendPing();
+
+            // TODO : remove this!!!
+            NetworkTime.SetCurrentTick(tick);
+            PlayerInputController.SetPreviewTick(tick);
         }
     }
 }

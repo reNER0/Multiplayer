@@ -6,8 +6,9 @@
 
 public static class NetworkSettings
 {
-    public static readonly string ServerIP = "localhost";
-    //public static readonly string ServerIP = "178.205.98.73";
+    public static string ServerIP = "localhost";
+    //public static string ServerIP = "178.205.98.73";
+    public static int ServerPort = 7777;
 
     // Smooth synchronization force between 0 and 1.
     // 1 - hard sync on every server state received, may be stuttering

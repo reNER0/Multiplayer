@@ -23,7 +23,7 @@ public class StateMachine : MonoBehaviour
         currentState?.OnEnter();
     }
 
-    public void Update()
+    public void OnInput()
     {
         currentState?.OnUpdate();
     }

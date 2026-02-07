@@ -9,7 +9,7 @@ public class NetworkObject
 
     public NetworkObject(Predictable predictable)
     {
-        Id = NetworkRepository.GetAvailableNetworkObjectId();
+        Id = NetworkRepository.Current.GetAvailableNetworkObjectId();
         Predictable = predictable;
     }
 }

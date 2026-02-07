@@ -7,10 +7,6 @@ namespace Assets.Scripts.Network
 {
     public class Hub : MonoBehaviour
     {
-        [SerializeField]
-        protected int _port = 25565;
-
-
         protected static readonly Type[] publicCommandTypes = {
             typeof(SpawnCmd),
             typeof(DestroyCmd),

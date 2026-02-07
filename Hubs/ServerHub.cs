@@ -35,7 +35,9 @@ public class ServerHub : Hub
     {
         Debug.Log("Starting server socket");
 
-        tcpListener = new TcpListener(IPAddress.Any, _port);
+        var config = ServerBootstrap.GetConfig();
+        tcpListener = new TcpListener(IPAddress.Any, config.Port);
+
         tcpListener.Start();
 
         while (!_disposed)
@@ -70,7 +72,7 @@ public class ServerHub : Hub
 
         connectedClient.StreamWriter.AutoFlush = true;
 
-        var initCmd = new InitClientCmd(availableId);
+        var initCmd = new InitClientCmd(availableId, NetworkTime.CurrentTick);
 
         SendCommandToClient(initCmd, connectedClient);
 
@@ -79,7 +81,7 @@ public class ServerHub : Hub
             SendCommandToClient(cmd, connectedClient);
         }
 
-        NetworkRepository.ConnectedClients.Add(connectedClient);
+        NetworkRepository.Current.ConnectedClients.Add(connectedClient);
 
         ClientReadingTask(connectedClient);
 
@@ -92,28 +94,52 @@ public class ServerHub : Hub
 
     private async void ClientReadingTask(NetworkClient client)
     {
-        while (!_disposed)
+        try
         {
-            if (client.Client.Connected == false)
+            while (!_disposed)
             {
-                HandleDisconnect(client);
-                return;
+                string data = await client.StreamReader.ReadLineAsync();
+
+                // Клиент корректно закрыл соединение -> data == null
+                if (data == null)
+                {
+                    HandleDisconnect(client);
+                    return;
+                }
+
+                var cmd = StringToCommand(data);
+                if (cmd == null)
+                {
+                    // Это уже реально странно, но тоже можно просто дисконнектнуть
+                    HandleDisconnect(client);
+                    return;
+                }
+
+                PerformCommand(cmd);
             }
-
-            var data = await client.StreamReader.ReadLineAsync();
-
-            var cmd = StringToCommand(data);
-
-            if (cmd == null)
-            {
-                Debug.LogError("Can`t parse Command!");
-                HandleDisconnect(client);
-                return;
-            }
-
-            PerformCommand(cmd);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Нормально: мы сами закрыли stream
+            HandleDisconnect(client);
+        }
+        catch (IOException)
+        {
+            // Нормально: разрыв соединения
+            HandleDisconnect(client);
+        }
+        catch (SocketException)
+        {
+            // Нормально: разрыв сокета
+            HandleDisconnect(client);
+        }
+        catch (Exception e)
+        {
+            // Вот это уже неожиданное — можно логнуть
+            HandleDisconnect(client, e);
         }
     }
+
 
     public void PerformCommand(ICommand cmd)
     {
@@ -134,13 +160,22 @@ public class ServerHub : Hub
 
     private void HandleDisconnect(NetworkClient client, Exception reason = null)
     {
-        if (reason != null)
-            Debug.LogError(reason);
+        if (client == null)
+            return;
 
+        if (reason != null)
+            Debug.LogWarning($"Client {client.ClientId} disconnected: {reason.GetType().Name}");
+
+        try { client.StreamWriter?.Dispose(); } catch { }
+        try { client.StreamReader?.Dispose(); } catch { }
+        try { client.Client?.Close(); } catch { }
+
+        NetworkRepository.Current.ConnectedClients.Remove(client);
         NetworkBus.OnClientDisconnected?.Invoke(client);
-        NetworkRepository.ConnectedClients.Remove(client);
-        Debug.LogError("Disconnected player: " + client.ClientId);
+
+        Debug.Log($"Disconnected player: {client.ClientId}");
     }
+
 
 
     public void SendCommandToClient(ICommand cmd, NetworkClient client)
@@ -160,7 +195,7 @@ public class ServerHub : Hub
 
     public void SendCommandToAllClients(ICommand cmd)
     {
-        foreach (var client in NetworkRepository.ConnectedClients)
+        foreach (var client in NetworkRepository.Current.ConnectedClients)
         {
             SendCommandToClient(cmd, client);
         }
@@ -168,7 +203,7 @@ public class ServerHub : Hub
 
     public void SendCommandToAllClientsExcept(ICommand cmd, NetworkClient exceptClient)
     {
-        foreach (var client in NetworkRepository.ConnectedClients)
+        foreach (var client in NetworkRepository.Current.ConnectedClients)
         {
             if (client.ClientId == exceptClient.ClientId)
                 continue;
@@ -177,14 +212,14 @@ public class ServerHub : Hub
         }
     }
 
-    public void DisconnectClient(NetworkClient client)
+    public static void DisconnectClient(NetworkClient client)
     {
         client.Client.Close();
     }
 
-    public void DisconnectAllClients()
+    public static void DisconnectAllClients()
     {
-        foreach (var client in NetworkRepository.ConnectedClients)
+        foreach (var client in NetworkRepository.Current.ConnectedClients)
         {
             DisconnectClient(client);
         }

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Assets.Scripts.Commands;
 using Assets.Scripts.Network;
 using UnityEngine;
 
@@ -16,7 +17,7 @@ public class PhysicsObject : Predictable
     {
         base.Start();
 
-        if (!NetworkRepository.IsCurrentClientOwnerOfObject(this))
+        if (!NetworkRepository.Current.IsCurrentClientOwnerOfObject(this))
         {
             // TODO : Fix this. Commented because of object owner is setting too late
             //Destroy(serverStateTransform.gameObject);
@@ -77,7 +78,7 @@ public class PhysicsObject : Predictable
         }
 
 
-        if (!NetworkRepository.IsCurrentClientOwnerOfObject(this))
+        if (!NetworkRepository.Current.IsCurrentClientOwnerOfObject(this))
         {
             Rigidbody.MovePosition(serverState.Position);
             Rigidbody.MoveRotation(serverState.Rotation);

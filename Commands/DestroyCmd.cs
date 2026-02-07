@@ -17,9 +17,9 @@ namespace Assets.Scripts.Network.Commands
 
         public void Execute()
         {
-            var networkObjectToRemove = NetworkRepository.NetworkObjectById.FirstOrDefault(x => x.Id == _objectId);
+            var networkObjectToRemove = NetworkRepository.Current.NetworkObjectById.FirstOrDefault(x => x.Id == _objectId);
 
-            NetworkRepository.NetworkObjectById.Remove(networkObjectToRemove);
+            NetworkRepository.Current.NetworkObjectById.Remove(networkObjectToRemove);
 
             GameObject.Destroy(networkObjectToRemove.Predictable.gameObject);
         }

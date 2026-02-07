@@ -69,7 +69,7 @@ namespace Assets.Scripts.Network
             var objectInputPairs = playerInputPairs.ToDictionary(x => GetPlayerObjectId(x.Key), y => y.Value);
 
             // Sorting first player objects then other objects
-            var allObjects = NetworkRepository.NetworkObjectById.OrderByDescending(x => objectInputPairs.ContainsKey(x.Id));
+            var allObjects = NetworkRepository.Current.NetworkObjectById.OrderByDescending(x => objectInputPairs.ContainsKey(x.Id));
 
 
             foreach (var predictable in allObjects.Select(x => x.Predictable))
@@ -88,7 +88,7 @@ namespace Assets.Scripts.Network
                     continue;
                 }
 
-                networkObject.Predictable.Input(new PlayerInputs(0, 0, false, tick));
+                networkObject.Predictable.Input(new PlayerInputs(0, 0, 0, 0, false, false, false, tick));
             }
 
             /*
@@ -122,7 +122,7 @@ namespace Assets.Scripts.Network
             }
 
             // Sync every rigidbody
-            foreach (var networkObject in NetworkRepository.NetworkObjectById)
+            foreach (var networkObject in NetworkRepository.Current.NetworkObjectById)
             {
                 var syncCmd = new SyncPredictableCmd(
                     networkObject.Id,
@@ -144,10 +144,10 @@ namespace Assets.Scripts.Network
 
         private static int GetPlayerObjectId(int playerId)
         {
-            if (NetworkRepository.CurrentCliendId == playerId)
-                return NetworkRepository.CurrentObjectId;
+            if (NetworkRepository.Current.CurrentCliendId == playerId)
+                return NetworkRepository.Current.CurrentObjectId;
 
-            return NetworkRepository.ConnectedClients.FirstOrDefault(x => x.ClientId == playerId)?.ClientObjectId ?? -1;
+            return NetworkRepository.Current.ConnectedClients.FirstOrDefault(x => x.ClientId == playerId)?.ClientObjectId ?? -1;
         }
 
 

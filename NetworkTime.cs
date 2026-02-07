@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public static class NetworkTime
@@ -14,5 +12,15 @@ public static class NetworkTime
     public static void SetTimeDifference(double time)
     {
         timeDifference = time;
+    }
+
+    // TODO : remove this!!!!!!!!!
+    public static void SetCurrentTick(int serverTick)
+    {
+        var timeDifferenceInTicks = serverTick - CurrentTick;
+
+        var timeDifferenceInSeconds = timeDifferenceInTicks * Time.fixedDeltaTime;
+
+        timeDifference += timeDifferenceInSeconds;
     }
 }

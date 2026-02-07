@@ -1,18 +1,20 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
-public static class NetworkRepository
+public class NetworkRepository
 {
-    public static int CurrentObjectId { get; private set; } = -1;
-    public static int CurrentCliendId { get; private set; } = -1;
-    public static bool IsServer => CurrentCliendId == -1;
+    public static NetworkRepository Current { get; private set; } = new();
+    public static void Reset() => Current = new();
 
-    public static List<NetworkObject> NetworkObjectById = new List<NetworkObject>();
+    public int CurrentObjectId { get; private set; } = -1;
+    public int CurrentCliendId { get; private set; } = -1;
+    public bool IsServer => CurrentCliendId == -1;
 
-    public static List<NetworkClient> ConnectedClients = new List<NetworkClient>();
+    public List<NetworkObject> NetworkObjectById = new List<NetworkObject>();
 
-    public static int GetAvailableNetworkObjectId()
+    public List<NetworkClient> ConnectedClients = new List<NetworkClient>();
+
+    public int GetAvailableNetworkObjectId()
     {
         if (!NetworkObjectById.Any())
             return 0;
@@ -21,17 +23,17 @@ public static class NetworkRepository
     }
 
 
-    public static void SetClientId(int id)
+    public void SetClientId(int id)
     {
         CurrentCliendId = id;
     }
 
-    public static void SetClientObjectId(int id)
+    public void SetClientObjectId(int id)
     {
         CurrentObjectId = id;
     }
 
-    public static bool IsCurrentClientOwnerOfObject(Predictable predictable)
+    public bool IsCurrentClientOwnerOfObject(Predictable predictable)
     {
         if (CurrentObjectId < 0)
             return false;

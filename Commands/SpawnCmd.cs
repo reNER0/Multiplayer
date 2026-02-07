@@ -26,7 +26,7 @@ namespace Assets.Scripts.Network.Commands
 
             var networkObject = new NetworkObject(gameObject.GetComponent<Predictable>());
 
-            NetworkRepository.NetworkObjectById.Add(networkObject);
+            NetworkRepository.Current.NetworkObjectById.Add(networkObject);
         }
     }
 }

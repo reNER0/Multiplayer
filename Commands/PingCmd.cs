@@ -9,7 +9,7 @@ namespace Assets.Scripts.Network.Commands
     {
         public void Execute()
         {
-            var client = NetworkRepository.ConnectedClients.First(x => x.ClientId == senderId);
+            var client = NetworkRepository.Current.ConnectedClients.First(x => x.ClientId == senderId);
 
             if (client == null)
                 return;

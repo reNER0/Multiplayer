@@ -55,21 +55,21 @@ public class ClientHub : Hub
         cmd.Execute();
     }
 
+
     public async void SendCommandToServer(ICommand cmd)
     {
+        if (_streamWriter == null || client == null || !client.Connected)
+            return;
+
         var data = CommandToString(cmd);
 
         try
         {
+            await Task.Delay(100);
+
             _streamWriter.WriteLine(data);
-            _streamWriter.Flush();
         }
-        catch (Exception e)
-        {
-            client?.Close();
-            Debug.LogError(e);
-            return;
-        }
+        catch { HandleDisconnect(); }
     }
 
     private async Task ConnectClient()
@@ -85,7 +85,7 @@ public class ClientHub : Hub
                 client.ReceiveBufferSize = 16384;
                 client.SendBufferSize = 16384;
 
-                await client.ConnectAsync(NetworkSettings.ServerIP, _port);
+                await client.ConnectAsync(NetworkSettings.ServerIP, NetworkSettings.ServerPort);
 
                 _streamReader = new StreamReader(client.GetStream());
                 _streamWriter = new StreamWriter(client.GetStream());
@@ -130,46 +130,69 @@ public class ClientHub : Hub
 
     private async void ListenServerLoop()
     {
-        while (!_disposed)
+        try
         {
-            try
+            while (!_disposed)
             {
-                if (client?.Connected == true)
+                var data = await _streamReader.ReadLineAsync();
+
+                if (data == null)
                 {
-                    var data = await _streamReader.ReadLineAsync();
-
-                    var cmd = StringToCommand(data);
-
-                    if (cmd == null)
-                    {
-                        Debug.LogError("Can`t parse Command!");
-                        HandleDisconnect();
-                        return;
-                    }
-
-                    _cmds.Enqueue(cmd);
-                }
-                else
-                {
-                    Debug.Log("Client disconnected!");
+                    HandleDisconnect();
                     return;
                 }
+
+                var cmd = StringToCommand(data);
+
+                if (cmd == null)
+                {
+                    HandleDisconnect(new InvalidDataException("Can't parse command"));
+                    return;
+                }
+
+                _cmds.Enqueue(cmd);
             }
-            catch (Exception e)
-            {
-                Debug.LogError(e);
-                HandleDisconnect();
-                return;
-            }
+        }
+        catch (ObjectDisposedException e)
+        {
+            // Мы сами закрыли стрим при выходе/смене сцены — это ок
+            HandleDisconnect(e);
+            return;
+        }
+        catch (IOException e)
+        {
+            // Сетевой разрыв — это ок
+            HandleDisconnect(e);
+            return;
+        }
+        catch (SocketException e)
+        {
+            // Сетевой разрыв — это ок
+            HandleDisconnect(e);
+            return;
+        }
+        catch (Exception e)
+        {
+            // Реально неожиданное
+            HandleDisconnect(e);
+            return;
         }
     }
 
+
+    private int _disconnectOnce;
+
     private void HandleDisconnect(Exception reason = null)
     {
+        if (Interlocked.Exchange(ref _disconnectOnce, 1) == 1)
+            return;
+
         if (reason != null)
-            Debug.LogError(reason);
+            Debug.LogWarning(reason);
 
         unityContext.Post(_ => NetworkBus.OnLocalClientDisconnected?.Invoke(), null);
+
+        NetworkRepository.Reset();
     }
 
     public static void OnDisconnect()
