@@ -47,7 +47,7 @@ public abstract class Predictable : MonoBehaviour
         ApplyState(state);
 
         // return if where no states to reconcilate
-        if (!States.Any(x => x.Tick > state.Tick))
+        if (!States.Any(x => x?.Tick > state.Tick))
             return;
 
         for (int i = state.Tick + 1; i <= NetworkTime.CurrentTick; i++)
@@ -67,8 +67,8 @@ public abstract class Predictable : MonoBehaviour
 
     public void SetInputByTick(int tick)
     {
-        var statesWithInputs = States.Where(x => x.Tick <= tick)
-            .Where(x => x.PlayerInputs != null);
+        var statesWithInputs = States?.Where(x => x?.Tick <= tick)
+            .Where(x => x?.PlayerInputs != null);
 
         if (statesWithInputs == null)
             return;

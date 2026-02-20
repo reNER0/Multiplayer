@@ -19,9 +19,12 @@ namespace Assets.Scripts.Network.Commands
         {
             var networkObjectToRemove = NetworkRepository.Current.NetworkObjectById.FirstOrDefault(x => x.Id == _objectId);
 
+            if (networkObjectToRemove == null)
+                return;
+
             NetworkRepository.Current.NetworkObjectById.Remove(networkObjectToRemove);
 
-            GameObject.Destroy(networkObjectToRemove.Predictable.gameObject);
+            GameObject.Destroy(networkObjectToRemove.Predictable?.gameObject);
         }
     }
 }
