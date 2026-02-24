@@ -9,7 +9,6 @@ public class PhysicsObject : Predictable
     public Rigidbody Rigidbody;
     public Transform serverStateTransform;
 
-
     protected RigidbodyState[] RigidbodyStates => States as RigidbodyState[];
 
 
@@ -67,33 +66,21 @@ public class PhysicsObject : Predictable
         States[tick % 1024] = state;
     }
 
-    public override void UpdateState(PredictableState state)
+    protected virtual void FixedUpdate()
     {
-        var serverState = state as RigidbodyState;
+        var serverState = lastServerState as RigidbodyState;
 
         if (serverState == null)
         {
-            Debug.LogError("Error while applying server predictable state!");
+            //Debug.LogError("Error while applying server predictable state!");
             return;
         }
-
-
-        if (!NetworkRepository.Current.IsCurrentClientOwnerOfObject(this))
-        {
-            Rigidbody.MovePosition(serverState.Position);
-            Rigidbody.MoveRotation(serverState.Rotation);
-            Rigidbody.velocity = serverState.Velocity;
-            Rigidbody.angularVelocity = serverState.RotationVelocity;
-            return;
-        }
-
 
         serverStateTransform.position = serverState.Position;
         serverStateTransform.rotation = serverState.Rotation;
 
-
         var localState = States.FirstOrDefault(x => x?.Tick == serverState.Tick);
-        
+
         if (localState == null)
         {
             Debug.LogWarning($"Client received server state with tick {serverState.Tick}, " +
@@ -110,28 +97,128 @@ public class PhysicsObject : Predictable
             return;
         }
 
-        SmoothSync(localState as RigidbodyState, serverState);
+        if (NetworkRepository.Current.IsCurrentClientOwnerOfObject(this))
+        {
+            SmoothSync(localState as RigidbodyState, serverState, NetworkSettings.ClientSidePredictionType);
+            return;
+        }
+
+        SmoothSync(localState as RigidbodyState, serverState, NetworkSettings.ErrorCorrectionType);
     }
 
-    protected void SmoothSync(RigidbodyState localState, RigidbodyState serverState)
+    protected void SmoothSync(RigidbodyState localState, RigidbodyState serverState, ErrorCorrectionType errorCorrectionType)
     {
-        var positionDelta = serverState.Position - localState.Position;
-        var rotationDelta = serverState.Rotation * Quaternion.Inverse(localState.Rotation);
-        var velocityDelta = serverState.Velocity - localState.Velocity;
-        var angularVelocityDelta = serverState.RotationVelocity - localState.RotationVelocity;
+        var positionDelta = GetDeltaPosition(serverState, localState, errorCorrectionType);
+        var rotationDelta = GetDeltaRotation(serverState, localState, errorCorrectionType);
+
+        //var velocityDelta = serverState.Velocity - localState.Velocity;
+        //var angularVelocityDelta = serverState.RotationVelocity - localState.RotationVelocity;
 
         var tickTimeInSeconds = Time.fixedDeltaTime;
         var pingTimeInSeconds = ClientHub.Ping / 1000f;
+        var ticksToSmooth = Math.Max(NetworkTime.CurrentTick - serverState.Tick, 1);
 
-        var ticksToSmooth = Math.Max(pingTimeInSeconds, tickTimeInSeconds) / tickTimeInSeconds;
+        positionDelta /= ticksToSmooth;
+        rotationDelta = Quaternion.Slerp(Quaternion.identity, rotationDelta, 1f / ticksToSmooth);
 
-        var interpolationValue = (1 / ticksToSmooth) * NetworkSettings.SyncForce;
+        var interpolationValue = (1f / ticksToSmooth) * NetworkSettings.SyncForce;
 
-        Rigidbody.MovePosition(Vector3.Lerp(transform.position, transform.position + positionDelta, interpolationValue));
-        Rigidbody.MoveRotation(Quaternion.Lerp(transform.rotation, rotationDelta * transform.rotation, interpolationValue));
+        var newPosition = GetCorrectedPosition(positionDelta, errorCorrectionType);
+        var newRotation = GetCorrectedRotation(rotationDelta, errorCorrectionType);
 
-        // TODO : fix smooth sync for velocities
-        //Rigidbody.velocity = Vector3.Lerp(Rigidbody.velocity, Rigidbody.velocity + velocityDelta, interpolationValue);
-        //Rigidbody.angularVelocity = Vector3.Lerp(Rigidbody.angularVelocity, Rigidbody.angularVelocity + angularVelocityDelta, interpolationValue);
+
+        //var newVelocity = Vector3.Lerp(Rigidbody.velocity, Rigidbody.velocity + velocityDelta, interpolationValue);
+        //var newAngularVelocity = Vector3.Lerp(Rigidbody.angularVelocity, Rigidbody.angularVelocity + angularVelocityDelta, interpolationValue);
+        
+        Rigidbody.MovePosition(newPosition);
+        Rigidbody.MoveRotation(newRotation);
+
+        // TODO : fix smooth sync for velocities. This is a temporary solution, but it causes some stuttering
+        //Rigidbody.velocity = newVelocity;
+        //Rigidbody.angularVelocity = newAngularVelocity;
+
+        if (errorCorrectionType == ErrorCorrectionType.Continious)
+            return;
+
+        serverState.Position = newPosition;
+        serverState.Rotation = newRotation;
+        //serverState.Velocity = newVelocity;
+        //serverState.RotationVelocity = newAngularVelocity;
+    }
+
+    private Vector3 GetCorrectedPosition(Vector3 positionDelta, ErrorCorrectionType correctionType) 
+    {
+        switch (correctionType)
+        {
+            case ErrorCorrectionType.Limited:
+                return Vector3.MoveTowards(Rigidbody.position, Rigidbody.position + positionDelta, NetworkSettings.SyncForce);
+            default:
+                return Vector3.Lerp(Rigidbody.position, Rigidbody.position + positionDelta, NetworkSettings.SyncForce);
+        }
+    }
+
+    private Quaternion GetCorrectedRotation(Quaternion rotationDelta, ErrorCorrectionType correctionType)
+    {
+        switch (correctionType)
+        {
+            case ErrorCorrectionType.Limited:
+                float maxDegrees = 180f;
+                return Quaternion.RotateTowards(Rigidbody.rotation, rotationDelta * Rigidbody.rotation, NetworkSettings.SyncForce * maxDegrees);
+            default:
+                return Quaternion.Slerp(Rigidbody.rotation, rotationDelta * Rigidbody.rotation, NetworkSettings.SyncForce);
+        }
+    }
+
+
+    private Vector3 GetDeltaPosition(RigidbodyState serverState, RigidbodyState clientState, ErrorCorrectionType correctionType)
+    {
+        switch (correctionType)
+        {
+            case ErrorCorrectionType.Extrapolated:
+
+                var ticksToExtrapolate = NetworkTime.CurrentTick - serverState.Tick;
+
+                var extrapolatedServerPosition = serverState.Position + serverState.Velocity * Time.fixedDeltaTime * ticksToExtrapolate;
+
+                serverStateTransform.position = extrapolatedServerPosition;
+
+                return extrapolatedServerPosition - Rigidbody.position;
+            default:
+                return serverState.Position - clientState.Position;
+        }
+    }
+
+    private Quaternion GetDeltaRotation(RigidbodyState serverState, RigidbodyState clientState, ErrorCorrectionType correctionType)
+    {
+        switch (correctionType)
+        {
+            case ErrorCorrectionType.Extrapolated:
+
+                var ticksToExtrapolate = NetworkTime.CurrentTick - serverState.Tick;
+
+                Vector3 angularDisplacement = serverState.RotationVelocity * Time.fixedDeltaTime * ticksToExtrapolate;
+
+                float angleRad = angularDisplacement.magnitude;
+
+                Quaternion extrapolatedServerRotation = serverState.Rotation;
+
+                if (angleRad > 0.0001f)
+                {
+                    Vector3 axis = angularDisplacement.normalized;
+
+                    Quaternion deltaRotation =
+                        Quaternion.AngleAxis(angleRad * Mathf.Rad2Deg, axis);
+
+                    extrapolatedServerRotation =
+                        deltaRotation * serverState.Rotation;
+                }
+
+                serverStateTransform.rotation = extrapolatedServerRotation;
+
+                return extrapolatedServerRotation * Quaternion.Inverse(Rigidbody.rotation);
+
+            default:
+                return serverState.Rotation * Quaternion.Inverse(clientState.Rotation);
+        }
     }
 }

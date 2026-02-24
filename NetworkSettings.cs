@@ -4,6 +4,15 @@
     Physics,
 }
 
+public enum ErrorCorrectionType
+{
+    Extrapolated,
+    Limited,
+    Smoothed,
+    Continious,
+    None,
+}
+
 public static class NetworkSettings
 {
     public static string ServerIP = "localhost";
@@ -15,13 +24,18 @@ public static class NetworkSettings
     // 0 - no smooth sync
     // Choose this value properly.
     // Too small value causes unnecessary reconcilations
-    public static readonly float SyncForce = 0.5f;
+    public static float SyncForce = 0.5f;
 
     // Maximum position delta for reconcilation
-    public static float MaximumError = 3f;
+    public static float MaximumError = 5f;
+
+    public static ErrorCorrectionType ClientSidePredictionType = ErrorCorrectionType.Continious;
+    public static ErrorCorrectionType ErrorCorrectionType = ErrorCorrectionType.Limited;
 
     // Maximum ping in ticks before starting to drop player inputs
-    public static readonly float MaximumPingInTicks = 20;
+    public static readonly float MaximumPingInTicks = 5;
+
+    public static readonly int SyncInterval = 1;
 
     public static readonly MultiplayerType MultiplayerType = MultiplayerType.Physics;
 }

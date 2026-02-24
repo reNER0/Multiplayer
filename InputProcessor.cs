@@ -121,15 +121,18 @@ namespace Assets.Scripts.Network
                 Physics.Simulate(Time.fixedDeltaTime);
             }
 
-            // Sync every rigidbody
-            foreach (var networkObject in NetworkRepository.Current.NetworkObjectById)
+            if (tick % NetworkSettings.SyncInterval == 0)
             {
-                var syncCmd = new SyncPredictableCmd(
-                    networkObject.Id,
-                    JsonUtility.ToJson(networkObject.Predictable.GetState())
-                    );
+                // Sync every rigidbody
+                foreach (var networkObject in NetworkRepository.Current.NetworkObjectById)
+                {
+                    var syncCmd = new SyncPredictableCmd(
+                        networkObject.Id,
+                        JsonUtility.ToJson(networkObject.Predictable.GetState())
+                        );
 
-                NetworkBus.OnCommandSendToClients(syncCmd);
+                    NetworkBus.OnCommandSendToClients(syncCmd);
+                }
             }
 
             // Clear all old tick inputs

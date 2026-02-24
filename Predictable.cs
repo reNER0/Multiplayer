@@ -12,7 +12,7 @@ public abstract class Predictable : MonoBehaviour
 
     public PlayerInputs lastAppliedInputs;
 
-
+    protected PredictableState lastServerState;
 
 
 
@@ -86,5 +86,8 @@ public abstract class Predictable : MonoBehaviour
         lastAppliedInputs = null;
     }
 
-    public abstract void UpdateState(PredictableState serverState);
+    public virtual void UpdateState(PredictableState state)
+    {
+        lastServerState = state;
+    }
 }
