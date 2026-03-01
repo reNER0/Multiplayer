@@ -10,6 +10,9 @@ public enum ErrorCorrectionType
     Limited,
     Smoothed,
     Continious,
+    HardSync,
+    SoftSync,
+    Velocity,
     None,
 }
 
@@ -29,8 +32,8 @@ public static class NetworkSettings
     // Maximum position delta for reconcilation
     public static float MaximumError = 5f;
 
-    public static ErrorCorrectionType ClientSidePredictionType = ErrorCorrectionType.Continious;
-    public static ErrorCorrectionType ErrorCorrectionType = ErrorCorrectionType.Limited;
+    public static ErrorCorrectionType ClientSidePredictionType = ErrorCorrectionType.Smoothed;
+    public static ErrorCorrectionType ErrorCorrectionType = ErrorCorrectionType.SoftSync;
 
     // Maximum ping in ticks before starting to drop player inputs
     public static readonly float MaximumPingInTicks = 5;

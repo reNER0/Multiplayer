@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Assets.Scripts.Commands;
 using Assets.Scripts.Network;
 using UnityEngine;
 
@@ -93,7 +92,6 @@ public class PhysicsObject : Predictable
         if (error >= NetworkSettings.MaximumError)
         {
             Reconcilate(serverState);
-
             return;
         }
 
@@ -108,14 +106,21 @@ public class PhysicsObject : Predictable
 
     protected void SmoothSync(RigidbodyState localState, RigidbodyState serverState, ErrorCorrectionType errorCorrectionType)
     {
+        if (errorCorrectionType == ErrorCorrectionType.HardSync)
+        {
+            Rigidbody.MovePosition(serverState.Position);
+            Rigidbody.MoveRotation(serverState.Rotation);
+            Rigidbody.velocity = serverState.Velocity;
+            Rigidbody.angularVelocity = serverState.RotationVelocity;
+            return;
+        }
+
         var positionDelta = GetDeltaPosition(serverState, localState, errorCorrectionType);
         var rotationDelta = GetDeltaRotation(serverState, localState, errorCorrectionType);
 
-        //var velocityDelta = serverState.Velocity - localState.Velocity;
-        //var angularVelocityDelta = serverState.RotationVelocity - localState.RotationVelocity;
+        var velocityDelta = serverState.Velocity - localState.Velocity;
+        var angularVelocityDelta = serverState.RotationVelocity - localState.RotationVelocity;
 
-        var tickTimeInSeconds = Time.fixedDeltaTime;
-        var pingTimeInSeconds = ClientHub.Ping / 1000f;
         var ticksToSmooth = Math.Max(NetworkTime.CurrentTick - serverState.Tick, 1);
 
         positionDelta /= ticksToSmooth;
@@ -126,26 +131,29 @@ public class PhysicsObject : Predictable
         var newPosition = GetCorrectedPosition(positionDelta, errorCorrectionType);
         var newRotation = GetCorrectedRotation(rotationDelta, errorCorrectionType);
 
+        var newVelocity = Vector3.Lerp(Rigidbody.velocity, Rigidbody.velocity + velocityDelta, interpolationValue);
+        var newAngularVelocity = Vector3.Lerp(Rigidbody.angularVelocity, Rigidbody.angularVelocity + angularVelocityDelta, interpolationValue);
 
-        //var newVelocity = Vector3.Lerp(Rigidbody.velocity, Rigidbody.velocity + velocityDelta, interpolationValue);
-        //var newAngularVelocity = Vector3.Lerp(Rigidbody.angularVelocity, Rigidbody.angularVelocity + angularVelocityDelta, interpolationValue);
-        
         Rigidbody.MovePosition(newPosition);
         Rigidbody.MoveRotation(newRotation);
 
-        // TODO : fix smooth sync for velocities. This is a temporary solution, but it causes some stuttering
-        //Rigidbody.velocity = newVelocity;
-        //Rigidbody.angularVelocity = newAngularVelocity;
+        if (errorCorrectionType == ErrorCorrectionType.SoftSync)
+        {
+            //Rigidbody.velocity = newVelocity;
+            //Rigidbody.angularVelocity = newAngularVelocity;
+        }
 
         if (errorCorrectionType == ErrorCorrectionType.Continious)
             return;
 
         serverState.Position = newPosition;
         serverState.Rotation = newRotation;
-        //serverState.Velocity = newVelocity;
-        //serverState.RotationVelocity = newAngularVelocity;
+        serverState.Velocity = newVelocity;
+        serverState.RotationVelocity = newAngularVelocity;
     }
 
+
+    // TODO : refactor this!!!
     private Vector3 GetCorrectedPosition(Vector3 positionDelta, ErrorCorrectionType correctionType) 
     {
         switch (correctionType)
@@ -174,6 +182,8 @@ public class PhysicsObject : Predictable
     {
         switch (correctionType)
         {
+            case ErrorCorrectionType.SoftSync:
+                return serverState.Position - Rigidbody.position;
             case ErrorCorrectionType.Extrapolated:
 
                 var ticksToExtrapolate = NetworkTime.CurrentTick - serverState.Tick;
@@ -192,6 +202,8 @@ public class PhysicsObject : Predictable
     {
         switch (correctionType)
         {
+            case ErrorCorrectionType.SoftSync:
+                return serverState.Rotation * Quaternion.Inverse(Rigidbody.rotation);
             case ErrorCorrectionType.Extrapolated:
 
                 var ticksToExtrapolate = NetworkTime.CurrentTick - serverState.Tick;
