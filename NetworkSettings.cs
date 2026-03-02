@@ -12,7 +12,7 @@ public enum ErrorCorrectionType
     Continious,
     HardSync,
     SoftSync,
-    Velocity,
+    Spring,
     None,
 }
 
@@ -28,12 +28,14 @@ public static class NetworkSettings
     // Choose this value properly.
     // Too small value causes unnecessary reconcilations
     public static float SyncForce = 0.5f;
+    public static float SpringForce = 50f;
+    public static float DampingForce = 10f;
 
     // Maximum position delta for reconcilation
     public static float MaximumError = 5f;
 
     public static ErrorCorrectionType ClientSidePredictionType = ErrorCorrectionType.Smoothed;
-    public static ErrorCorrectionType ErrorCorrectionType = ErrorCorrectionType.SoftSync;
+    public static ErrorCorrectionType ErrorCorrectionType = ErrorCorrectionType.Spring;
 
     // Maximum ping in ticks before starting to drop player inputs
     public static readonly float MaximumPingInTicks = 5;

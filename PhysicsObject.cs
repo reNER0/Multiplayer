@@ -105,6 +105,9 @@ public class PhysicsObject : Predictable
         SmoothSync(localState as RigidbodyState, serverState, NetworkSettings.ErrorCorrectionType);
     }
 
+    private Vector3 lastDelta;
+    private Vector3 lastAngularError;
+
     protected void SmoothSync(RigidbodyState localState, RigidbodyState serverState, ErrorCorrectionType errorCorrectionType)
     {
         if (errorCorrectionType == ErrorCorrectionType.HardSync)
@@ -124,19 +127,54 @@ public class PhysicsObject : Predictable
 
         var ticksToSmooth = Math.Max(NetworkTime.CurrentTick - serverState.Tick, 1);
 
-        positionDelta /= ticksToSmooth;
+        if (errorCorrectionType != ErrorCorrectionType.Spring)
+        {
+            positionDelta /= ticksToSmooth;
+        }
+
         rotationDelta = Quaternion.Slerp(Quaternion.identity, rotationDelta, 1f / ticksToSmooth);
+
 
         var interpolationValue = (1f / ticksToSmooth) * NetworkSettings.SyncForce;
 
         var newPosition = GetCorrectedPosition(positionDelta, errorCorrectionType);
         var newRotation = GetCorrectedRotation(rotationDelta, errorCorrectionType);
 
-        var newVelocity = Vector3.Lerp(Rigidbody.velocity, Rigidbody.velocity + velocityDelta, interpolationValue);
-        var newAngularVelocity = Vector3.Lerp(Rigidbody.angularVelocity, Rigidbody.angularVelocity + angularVelocityDelta, interpolationValue);
+        //var newVelocity = Vector3.Lerp(Rigidbody.velocity, Rigidbody.velocity + velocityDelta, interpolationValue);
+        //var newAngularVelocity = Vector3.Lerp(Rigidbody.angularVelocity, Rigidbody.angularVelocity + angularVelocityDelta, interpolationValue);
 
-        Rigidbody.MovePosition(newPosition);
-        Rigidbody.MoveRotation(newRotation);
+        if (errorCorrectionType != ErrorCorrectionType.Spring)
+        {
+            Rigidbody.MovePosition(newPosition);
+            Rigidbody.MoveRotation(newRotation);
+        }
+        else 
+        {
+            float dt = Time.fixedDeltaTime;
+
+            // 1️ производная ошибки
+            Vector3 errorVelocity = (positionDelta - lastDelta) / dt;
+
+            // 2️ PD ускорение
+            Vector3 acceleration =
+                NetworkSettings.SpringForce * positionDelta
+                + NetworkSettings.DampingForce * errorVelocity;
+
+            // 4️ применяем как ускорение (не зависит от массы)
+            Rigidbody.AddForce(acceleration, ForceMode.Acceleration);
+
+            // 5️ сохраняем для следующего тика
+            lastDelta = positionDelta;
+
+            Rigidbody.MoveRotation(newRotation);
+
+            //serverState.Position = newPosition;
+            //serverState.Rotation = newRotation;
+            //serverState.Velocity = newVelocity;
+            //serverState.RotationVelocity = newAngularVelocity;
+
+            return;
+        }
 
         if (errorCorrectionType == ErrorCorrectionType.SoftSync)
         {
@@ -144,13 +182,14 @@ public class PhysicsObject : Predictable
             //Rigidbody.angularVelocity = newAngularVelocity;
         }
 
+
         if (errorCorrectionType == ErrorCorrectionType.Continious)
             return;
 
         serverState.Position = newPosition;
         serverState.Rotation = newRotation;
-        serverState.Velocity = newVelocity;
-        serverState.RotationVelocity = newAngularVelocity;
+        //serverState.Velocity = newVelocity;
+        //serverState.RotationVelocity = newAngularVelocity;
     }
 
 
@@ -183,6 +222,7 @@ public class PhysicsObject : Predictable
     {
         switch (correctionType)
         {
+            case ErrorCorrectionType.Spring:
             case ErrorCorrectionType.SoftSync:
                 return serverState.Position - Rigidbody.position;
             case ErrorCorrectionType.Extrapolated:
@@ -203,6 +243,7 @@ public class PhysicsObject : Predictable
     {
         switch (correctionType)
         {
+            case ErrorCorrectionType.Spring:
             case ErrorCorrectionType.SoftSync:
                 return serverState.Rotation * Quaternion.Inverse(Rigidbody.rotation);
             case ErrorCorrectionType.Extrapolated:
