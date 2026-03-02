@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Assets.Scripts.Network;
 using UnityEngine;
@@ -88,8 +88,9 @@ public class PhysicsObject : Predictable
         }
 
         var error = (serverState.Position - (localState as RigidbodyState).Position).magnitude;
+        var angularError = Quaternion.Angle(serverState.Rotation, (localState as RigidbodyState).Rotation);
 
-        if (error >= NetworkSettings.MaximumError)
+        if (error >= NetworkSettings.MaximumError || angularError > 60)
         {
             Reconcilate(serverState);
             return;
