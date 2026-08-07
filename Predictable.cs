@@ -19,13 +19,16 @@ public abstract class Predictable : MonoBehaviour
 
     protected virtual void Start()
     {
-        NetworkBus.OnInputsSetToTick += SetInputByTick;
-        NetworkBus.OnAllStatesSaved += SaveCurrentState;
-
         NetworkBus.OnPredictableSpawned?.Invoke(this);
     }
 
-    private void OnDestroy()
+    private void OnEnable()
+    {
+        NetworkBus.OnInputsSetToTick += SetInputByTick;
+        NetworkBus.OnAllStatesSaved += SaveCurrentState;
+    }
+
+    private void OnDisable()
     {
         NetworkBus.OnInputsSetToTick -= SetInputByTick;
         NetworkBus.OnAllStatesSaved -= SaveCurrentState;
