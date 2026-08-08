@@ -8,7 +8,7 @@ public class PhysicsObject : Predictable
     public Rigidbody Rigidbody;
     public Transform serverStateTransform;
 
-    protected RigidbodyState[] RigidbodyStates => States as RigidbodyState[];
+    protected RigidbodyState[] RigidbodyStates => LocalStates as RigidbodyState[];
 
 
     protected override void Start()
@@ -62,12 +62,14 @@ public class PhysicsObject : Predictable
             lastAppliedInputs
             );
 
-        States[tick % 1024] = state;
+        LocalStates[tick % 1024] = state;
     }
 
     protected virtual void FixedUpdate()
     {
-        var serverState = lastServerState as RigidbodyState;
+        //var serverState = lastServerState as RigidbodyState;
+        var interpolateTick = NetworkTime.CurrentTick - NetworkSettings.MaximumPingInTicks;
+        var serverState = ServerStates.FirstOrDefault(x => x!= null && x.Tick == interpolateTick) as RigidbodyState;
 
         if (serverState == null)
         {
@@ -78,12 +80,12 @@ public class PhysicsObject : Predictable
         serverStateTransform.position = serverState.Position;
         serverStateTransform.rotation = serverState.Rotation;
 
-        var localState = States.FirstOrDefault(x => x?.Tick == serverState.Tick);
+        var localState = LocalStates.FirstOrDefault(x => x?.Tick == serverState.Tick);
 
         if (localState == null)
         {
-            Debug.LogWarning($"Client received server state with tick {serverState.Tick}, " +
-                $"but clients last state tick was {States.Where(x => x != null)?.OrderByDescending(x => x.Tick).First().Tick}");
+            //Debug.LogWarning($"Client received server state with tick {serverState.Tick}, " +
+            //    $"but clients last state tick was {States.Where(x => x != null)?.OrderByDescending(x => x.Tick).First().Tick}");
             return;
         }
 

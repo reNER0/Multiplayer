@@ -8,11 +8,12 @@ public abstract class Predictable : MonoBehaviour
     // TODO : Remove this!!!
     public bool inputSeam;
 
-    protected PredictableState[] States = new PredictableState[1024];
+    protected PredictableState[] LocalStates = new PredictableState[1024];
+    protected PredictableState[] ServerStates = new PredictableState[1024];
 
     public PlayerInputs lastAppliedInputs;
 
-    protected PredictableState lastServerState;
+    //protected PredictableState lastServerState;
 
 
 
@@ -45,12 +46,12 @@ public abstract class Predictable : MonoBehaviour
         Debug.LogError("Reconcilating!");
 
         // TODO : make all rigidbodies reconcilation
-        States[state.Tick % 1024] = state;
+        LocalStates[state.Tick % 1024] = state;
 
         ApplyState(state);
 
         // return if where no states to reconcilate
-        if (!States.Any(x => x?.Tick > state.Tick))
+        if (!LocalStates.Any(x => x?.Tick > state.Tick))
             return;
 
         for (int i = state.Tick + 1; i <= NetworkTime.CurrentTick; i++)
@@ -70,7 +71,7 @@ public abstract class Predictable : MonoBehaviour
 
     public void SetInputByTick(int tick)
     {
-        var statesWithInputs = States?.Where(x => x?.Tick <= tick)
+        var statesWithInputs = LocalStates?.Where(x => x?.Tick <= tick)
             .Where(x => x?.PlayerInputs != null);
 
         if (statesWithInputs == null)
@@ -91,6 +92,7 @@ public abstract class Predictable : MonoBehaviour
 
     public virtual void UpdateState(PredictableState state)
     {
-        lastServerState = state;
+        ServerStates[state.Tick % 1024] = state;
+        //lastServerState = state;
     }
 }
