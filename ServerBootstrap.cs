@@ -25,7 +25,7 @@ public static class ServerBootstrap
             MatchId = GetString(dict, "--matchId", "dev_match"),
             BindIp = GetString(dict, "--bindIp", "localhost"),
             Secret = GetString(dict, "--secret", ""),
-            Port = GetInt(dict, "--port", 7777),
+            Port = GetInt(dict, "--port", NetworkSettings.ServerPort),
             ExpectedPlayers = GetInt(dict, "--expectedPlayers", 5),
         };
 

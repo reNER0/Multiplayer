@@ -41,4 +41,10 @@ public static class NetworkSettings
     public static readonly int SyncInterval = 1;
 
     public static readonly MultiplayerType MultiplayerType = MultiplayerType.Physics;
+
+
+    public static int AdditivePing = 0;
+    public static int AdditiveJitter = 0;
+
+    public static bool ShowServerStates = true;
 }

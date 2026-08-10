@@ -15,6 +15,9 @@ public class PhysicsObject : Predictable
     {
         base.Start();
 
+        OnShowServerStates(NetworkSettings.ShowServerStates);
+        NetworkBus.OnShowServerStates += OnShowServerStates;
+
         if (!NetworkRepository.Current.IsCurrentClientOwnerOfObject(this))
         {
             // TODO : Fix this. Commented because of object owner is setting too late
@@ -23,6 +26,16 @@ public class PhysicsObject : Predictable
         }
 
         serverStateTransform.parent = null;
+    }
+
+    private void OnShowServerStates(bool show) 
+    {
+        serverStateTransform.gameObject.SetActive(show);
+    }
+
+    private void OnDestroy()
+    {
+        NetworkBus.OnShowServerStates -= OnShowServerStates;
     }
 
     public override void Input(PlayerInputs playerInputs)

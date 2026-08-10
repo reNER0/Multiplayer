@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Threading;
 using ThreadPriority = System.Threading.ThreadPriority;
+using UnityEngine.UIElements;
 
 public class ClientHub : Hub
 {
@@ -65,11 +66,17 @@ public class ClientHub : Hub
 
         try
         {
-            await Task.Delay(100);
+            int delay = NetworkSettings.AdditivePing + UnityEngine.Random.Range(-NetworkSettings.AdditiveJitter, NetworkSettings.AdditiveJitter + 1);
+            delay = Mathf.Max(0, delay);
+
+            await Task.Delay(delay);
 
             _streamWriter.WriteLine(data);
         }
-        catch { HandleDisconnect(); }
+        catch
+        {
+            HandleDisconnect();
+        }
     }
 
     private async Task ConnectClient()
@@ -106,7 +113,7 @@ public class ClientHub : Hub
             catch (Exception e)
             {
                 Debug.LogError(e);
-                return;
+                await Task.Delay(1000);
             }
         }
     }

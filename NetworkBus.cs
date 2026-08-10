@@ -22,4 +22,6 @@ public static class NetworkBus
     public static Action<State> OnStateChanged;
 
     public static Action<int> OnPingUpdated;
+
+    public static Action<bool> OnShowServerStates;
 }

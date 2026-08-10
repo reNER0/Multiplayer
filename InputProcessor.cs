@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace Assets.Scripts.Network
 {
+    // TODO : fix critical bug!! If server don`t receiving inputs he just stops
     public class InputProcessor : MonoBehaviour
     {
         private static Dictionary<int, List<PlayerInputs>> inputsByPlayerId = new();
