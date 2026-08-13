@@ -5,5 +5,4 @@ using Assets.Scripts.Network.Commands;
 public class PredictableState : SerializableClass
 {
     public int Tick;
-    public PlayerInputs PlayerInputs;
 }

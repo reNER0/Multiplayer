@@ -184,8 +184,7 @@ public class ServerHub : Hub
         {
             var data = CommandToString(cmd);
 
-            client.StreamWriter.WriteLine(CommandToString(cmd));
-            client.StreamWriter.Flush();
+            client.StreamWriter.WriteLine(data);
         }
         catch (Exception ex)
         {

@@ -59,8 +59,7 @@ public class PhysicsObject : Predictable
             Rigidbody.position,
             Rigidbody.velocity,
             Rigidbody.rotation,
-            Rigidbody.angularVelocity,
-            lastAppliedInputs
+            Rigidbody.angularVelocity
             );
     }
 
@@ -71,22 +70,91 @@ public class PhysicsObject : Predictable
             Rigidbody.position,
             Rigidbody.velocity,
             Rigidbody.rotation,
-            Rigidbody.angularVelocity,
-            lastAppliedInputs
+            Rigidbody.angularVelocity
             );
 
         LocalStates[tick % 1024] = state;
+        LocalInputs[tick % 1024] = lastAppliedInputs; 
+    }
+
+    /// <summary>
+    /// Calculates a temporary state for targetTick from the two nearest real
+    /// server snapshots. The calculated state is not stored in ServerStates.
+    /// </summary>
+    protected T GetServerStateAtTick<T>(int targetTick) where T : RigidbodyState
+    {
+        T previousState = null;
+        T nextState = null;
+
+        foreach (var rawState in ServerStates)
+        {
+            var state = rawState as T;
+            if (state == null)
+                continue;
+
+            if (state.Tick <= targetTick &&
+                (previousState == null || state.Tick > previousState.Tick))
+            {
+                previousState = state;
+            }
+
+            if (state.Tick >= targetTick &&
+                (nextState == null || state.Tick < nextState.Tick))
+            {
+                nextState = state;
+            }
+        }
+
+        // Interpolation needs a real snapshot on both sides of targetTick.
+        if (previousState == null || nextState == null)
+            return null;
+
+        var interpolation = previousState.Tick == nextState.Tick
+            ? 0f
+            : Mathf.InverseLerp(previousState.Tick, nextState.Tick, targetTick);
+
+        return InterpolateServerStates(previousState, nextState, targetTick, interpolation) as T;
+    }
+
+    private static RigidbodyState InterpolateServerStates(
+        RigidbodyState previousState,
+        RigidbodyState nextState,
+        int targetTick,
+        float interpolation)
+    {
+        var previousPlayerState = previousState as PlayerSyncState;
+        var nextPlayerState = nextState as PlayerSyncState;
+
+        if (previousPlayerState != null && nextPlayerState != null)
+        {
+            return new PlayerSyncState(
+                targetTick,
+                Vector3.Lerp(previousPlayerState.Position, nextPlayerState.Position, interpolation),
+                Vector3.Lerp(previousPlayerState.Velocity, nextPlayerState.Velocity, interpolation),
+                Quaternion.Slerp(previousPlayerState.Rotation, nextPlayerState.Rotation, interpolation),
+                Vector3.Lerp(previousPlayerState.RotationVelocity, nextPlayerState.RotationVelocity, interpolation),
+                interpolation < 1f ? previousPlayerState.Health : nextPlayerState.Health,
+                Mathf.LerpAngle(previousPlayerState.Yaw, nextPlayerState.Yaw, interpolation),
+                Mathf.LerpAngle(previousPlayerState.Pitch, nextPlayerState.Pitch, interpolation));
+        }
+
+        return new RigidbodyState(
+            targetTick,
+            Vector3.Lerp(previousState.Position, nextState.Position, interpolation),
+            Vector3.Lerp(previousState.Velocity, nextState.Velocity, interpolation),
+            Quaternion.Slerp(previousState.Rotation, nextState.Rotation, interpolation),
+            Vector3.Lerp(previousState.RotationVelocity, nextState.RotationVelocity, interpolation));
     }
 
     protected virtual void FixedUpdate()
     {
         //var serverState = lastServerState as RigidbodyState;
-        var interpolateTick = NetworkTime.CurrentTick - NetworkSettings.MaximumPingInTicks;
-        var serverState = ServerStates.FirstOrDefault(x => x!= null && x.Tick == interpolateTick) as RigidbodyState;
+        var interpolateTick = NetworkTime.CurrentTick - Mathf.RoundToInt(NetworkSettings.MaximumPingInTicks * 2f);
+        var serverState = GetServerStateAtTick<RigidbodyState>(interpolateTick);
 
         if (serverState == null)
         {
-            //Debug.LogError("Error while applying server predictable state!");
+            //Debug.LogError($"Error while applying server predictable state! {interpolateTick}");
             return;
         }
 

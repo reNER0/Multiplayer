@@ -9,6 +9,7 @@ public abstract class Predictable : MonoBehaviour
     public bool inputSeam;
 
     protected PredictableState[] LocalStates = new PredictableState[1024];
+    protected PlayerInputs[] LocalInputs = new PlayerInputs[1024];
     protected PredictableState[] ServerStates = new PredictableState[1024];
 
     public PlayerInputs lastAppliedInputs;
@@ -71,19 +72,18 @@ public abstract class Predictable : MonoBehaviour
 
     public void SetInputByTick(int tick)
     {
-        var statesWithInputs = LocalStates?.Where(x => x?.Tick <= tick)
-            .Where(x => x?.PlayerInputs != null);
+        var statesWithInputs = LocalInputs?.Where(x => x != null && x?.Tick <= tick);
 
         if (statesWithInputs == null)
             return;
 
         var lastLocalInputState = statesWithInputs.OrderByDescending(x => x.Tick).First();
 
-        Input(lastLocalInputState.PlayerInputs);
+        Input(lastLocalInputState);
 
         if (lastLocalInputState.Tick == tick)
         {
-            lastAppliedInputs = lastLocalInputState.PlayerInputs;
+            lastAppliedInputs = lastLocalInputState;
             return;
         }
 
