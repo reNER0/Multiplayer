@@ -45,21 +45,33 @@ namespace Assets.Scripts.Network
             CheckForMatch();
         }
 
+        private void FixedUpdate()
+        {
+            CheckForMatch();
+        }
 
         private static void CheckForMatch()
         {
-            var outOfMaximumPing = (NetworkTime.CurrentTick - processTick) > NetworkSettings.MaximumPingInTicks;
+            var shouldSync = false;
 
-            var combo = inputsByPlayerId.All(x => x.Value.Any(x => x.Tick == processTick + 1)) && (inputsByPlayerId.Count > 0);
-
-            if (outOfMaximumPing || combo)
+            while (true)
             {
+                var outOfMaximumPing = (NetworkTime.CurrentTick - processTick) > NetworkSettings.MaximumPingInTicks;
+                var combo = inputsByPlayerId.Count > 0 &&
+                    inputsByPlayerId.All(x => x.Value.Any(input => input.Tick == processTick + 1));
+
+                if (!outOfMaximumPing && !combo)
+                    break;
+
                 processTick++;
                 ProcessOnTick(processTick);
 
-                CheckForMatch();
-                return;
+                if (processTick % NetworkSettings.SyncInterval == 0)
+                    shouldSync = true;
             }
+
+            if (shouldSync)
+                SyncPredictables();
         }
 
         private static void ProcessOnTick(int tick)
@@ -122,18 +134,6 @@ namespace Assets.Scripts.Network
                 Physics.Simulate(Time.fixedDeltaTime);
             }
 
-            if (tick % NetworkSettings.SyncInterval == 0)
-            {
-                var predictables = NetworkRepository.Current.NetworkObjectById
-                    .Select(networkObject => new SyncPredictableModel(
-                        networkObject.Id,
-                        JsonUtility.ToJson(networkObject.Predictable.GetState())
-                    ))
-                    .ToArray();
-
-                NetworkBus.OnCommandSendToClients(new SyncPredictablesCmd(predictables));
-            }
-
             // Clear all old tick inputs
             foreach (var objectInputsPair in inputsByPlayerId)
             {
@@ -141,6 +141,19 @@ namespace Assets.Scripts.Network
             }
 
             TickRecorder.RecordTick(tick);
+        }
+
+
+        private static void SyncPredictables()
+        {
+            var predictables = NetworkRepository.Current.NetworkObjectById
+                .Select(networkObject => new SyncPredictableModel(
+                    networkObject.Id,
+                    JsonUtility.ToJson(networkObject.Predictable.GetState())
+                ))
+                .ToArray();
+
+            NetworkBus.OnCommandSendToClients(new SyncPredictablesCmd(predictables));
         }
 
 
