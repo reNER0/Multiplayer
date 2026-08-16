@@ -124,16 +124,14 @@ namespace Assets.Scripts.Network
 
             if (tick % NetworkSettings.SyncInterval == 0)
             {
-                // Sync every rigidbody
-                foreach (var networkObject in NetworkRepository.Current.NetworkObjectById)
-                {
-                    var syncCmd = new SyncPredictableCmd(
+                var predictables = NetworkRepository.Current.NetworkObjectById
+                    .Select(networkObject => new SyncPredictableModel(
                         networkObject.Id,
                         JsonUtility.ToJson(networkObject.Predictable.GetState())
-                        );
+                    ))
+                    .ToArray();
 
-                    NetworkBus.OnCommandSendToClients(syncCmd);
-                }
+                NetworkBus.OnCommandSendToClients(new SyncPredictablesCmd(predictables));
             }
 
             // Clear all old tick inputs

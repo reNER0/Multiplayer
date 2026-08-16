@@ -38,7 +38,7 @@ public static class NetworkSettings
     // Maximum ping in ticks before starting to drop player inputs
     public static readonly float MaximumPingInTicks = 5;
 
-    public static readonly int SyncInterval = 2;
+    public static readonly int SyncInterval = 3;
 
     public static readonly MultiplayerType MultiplayerType = MultiplayerType.Physics;
 
