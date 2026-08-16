@@ -32,5 +32,10 @@ namespace Assets.Scripts.Network.Commands
                 PlayerCamera.Instance.SetTarget((Player)NetworkRepository.Current.NetworkObjectById.First(x => x.Id == _objectId).Predictable);
             }
         }
+
+        public override string ToString()
+        {
+            return $"SetPlayerObjectCmd: playerId={_playerId}, objectId={_objectId}";
+        }
     }
 }

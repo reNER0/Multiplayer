@@ -26,5 +26,10 @@ namespace Assets.Scripts.Network.Commands
 
             GameObject.Destroy(networkObjectToRemove.Predictable?.gameObject);
         }
+
+        public override string ToString()
+        {
+            return $"DestroyCmd: objectId={_objectId}";
+        }
     }
 }

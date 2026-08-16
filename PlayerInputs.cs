@@ -45,7 +45,7 @@ public class PlayerInputs
     public bool Jump;
     public int Tick;
 
-    public PlayerInputs(float x, float y, float yaw, float pitch, bool jump, bool fire, bool aim, int tick)
+    public PlayerInputs(float x = 0, float y = 0, float yaw = 0, float pitch = 0, bool jump = false, bool fire = false, bool aim = false, int tick = 0)
     {
         X = x;
         Y = y;

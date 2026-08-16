@@ -16,5 +16,10 @@ namespace Assets.Scripts.Network.Commands
 
             NetworkBus.OnCommandSendToClient?.Invoke(new PongCmd(Time.fixedDeltaTime, NetworkTime.UpTime), client);
         }
+
+        public override string ToString()
+        {
+            return $"PingCmd: senderId={senderId}";
+        }
     }
 }

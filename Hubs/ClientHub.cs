@@ -33,9 +33,13 @@ public class ClientHub : Hub
 
     private static SynchronizationContext unityContext;
 
+    private static CmdRecorder CmdRecorder;
+
 
     private void Awake()
     {
+        CmdRecorder = gameObject.AddComponent<CmdRecorder>();
+
         unityContext = SynchronizationContext.Current;
 
         Application.runInBackground = true;
@@ -53,6 +57,11 @@ public class ClientHub : Hub
 
     public async void PerformCommand(ICommand cmd)
     {
+        if (cmd.GetType() == typeof(SyncPredictablesCmd))
+        {
+            CmdRecorder.RecordCmd(cmd);
+        }
+
         cmd.Execute();
     }
 
@@ -205,6 +214,13 @@ public class ClientHub : Hub
     public static void OnDisconnect()
     {
         client.Close();
+
+        if (LaunchFlags.IsBot) 
+        {
+            Application.Quit(0);
+            return;
+        }
+
         SceneLoader.LoadMainMenuScene();
     }
 

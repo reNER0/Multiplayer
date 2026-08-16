@@ -23,11 +23,21 @@ namespace Assets.Scripts.Network.Commands
 
             Debug.Log($"Init cmd: {newClientId}");
 
+            UIBus.OnChatMessage?.Invoke(new ChatMessage()
+            {
+                sender = senderId.ToString(),
+                text = $"initializated player: {newClientId}"
+            });
+
             ClientHub.SendPing();
 
             // TODO : remove this!!!
             NetworkTime.SetCurrentTick(tick);
-            PlayerInputController.SetPreviewTick(tick);
+        }
+
+        public override string ToString()
+        {
+            return $"InitClientCmd: newClientId={newClientId}, tick={tick}";
         }
     }
 }

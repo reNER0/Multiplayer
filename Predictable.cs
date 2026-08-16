@@ -77,7 +77,10 @@ public abstract class Predictable : MonoBehaviour
         if (statesWithInputs == null)
             return;
 
-        var lastLocalInputState = statesWithInputs.OrderByDescending(x => x.Tick).First();
+        var lastLocalInputState = statesWithInputs.OrderByDescending(x => x.Tick).FirstOrDefault();
+
+        if(lastLocalInputState == null)
+            lastLocalInputState = new PlayerInputs();
 
         Input(lastLocalInputState);
 

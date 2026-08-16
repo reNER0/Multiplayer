@@ -18,5 +18,10 @@ namespace Assets.Scripts.Network.Commands
         {
             InputProcessor.AddInput(senderId, playerInputs);
         }
+
+        public override string ToString()
+        {
+            return $"InputCmd: senderId={senderId}, playerInputs={playerInputs}";
+        }
     }
 }

@@ -29,5 +29,10 @@ namespace Assets.Scripts.Network.Commands
 
             NetworkBus.OnPingUpdated?.Invoke((int)pingInMilliseconds);
         }
+
+        public override string ToString()
+        {
+            return $"PongCmd: senderId={senderId}, fixedDeltaTime={fixedDeltaTime}, serverUpTime={serverUpTime}";
+        }
     }
 }

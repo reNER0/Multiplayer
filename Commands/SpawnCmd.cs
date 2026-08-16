@@ -27,6 +27,17 @@ namespace Assets.Scripts.Network.Commands
             var networkObject = new NetworkObject(gameObject.GetComponent<Predictable>());
 
             NetworkRepository.Current.NetworkObjectById.Add(networkObject);
+
+            UIBus.OnChatMessage?.Invoke(new ChatMessage() 
+            {
+                sender = senderId.ToString(),
+                text = $"spawned new object: {_prefabName}"
+            });
+        }
+
+        public override string ToString()
+        {
+            return $"SpawnCmd: prefabName={_prefabName}, position={_position}, rotation={_rotation}";
         }
     }
 }

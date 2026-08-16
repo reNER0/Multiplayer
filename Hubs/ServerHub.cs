@@ -16,9 +16,14 @@ public class ServerHub : Hub
 
     private int availableId;
 
+    private static CmdRecorder CmdRecorder;
+
 
     private void Awake()
     {
+        CmdRecorder = gameObject.AddComponent<CmdRecorder>();
+        CmdRecorder.SetIsServer();
+
         Application.runInBackground = true;
 
         NetworkBus.OnCommandSendToServer += PerformCommand;
@@ -194,6 +199,11 @@ public class ServerHub : Hub
 
     public void SendCommandToAllClients(ICommand cmd)
     {
+        if (cmd.GetType() == typeof(SyncPredictablesCmd))
+        {
+            CmdRecorder.RecordCmd(cmd);
+        }
+
         foreach (var client in NetworkRepository.Current.ConnectedClients)
         {
             SendCommandToClient(cmd, client);

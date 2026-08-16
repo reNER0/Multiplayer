@@ -20,5 +20,10 @@ namespace Assets.Scripts.Network.Commands
 
             NetworkBus.OnStateChanged?.Invoke(state);
         }
+
+        public override string ToString()
+        {
+            return $"StateCmd: senderId={senderId}, stateName={stateName}";
+        }
     }
 }
