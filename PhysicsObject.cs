@@ -141,7 +141,7 @@ public class PhysicsObject : Predictable
 
     protected virtual void FixedUpdate()
     {
-        //var serverState = lastServerState as RigidbodyState;
+        // Using old tick to stable interpolation result
         var interpolateTick = NetworkTime.CurrentTick - Mathf.RoundToInt(NetworkSettings.MaximumPingInTicks * 2f);
         var serverState = GetServerStateAtTick<RigidbodyState>(interpolateTick);
 
@@ -166,7 +166,7 @@ public class PhysicsObject : Predictable
         var error = (serverState.Position - (localState as RigidbodyState).Position).magnitude;
         var angularError = Quaternion.Angle(serverState.Rotation, (localState as RigidbodyState).Rotation);
 
-        if (error >= NetworkSettings.MaximumError || angularError > 60)
+        if (error >= NetworkSettings.MaximumPositionError || angularError > NetworkSettings.MaximumRotationError)
         {
             Reconcilate(serverState);
             return;
@@ -198,62 +198,20 @@ public class PhysicsObject : Predictable
         var velocityDelta = serverState.Velocity - localState.Velocity;
         var angularVelocityDelta = serverState.RotationVelocity - localState.RotationVelocity;
 
-        var ticksToSmooth = Math.Max(NetworkTime.CurrentTick - serverState.Tick, 1);
+        //var ticksToSmooth = Math.Max(NetworkTime.CurrentTick - serverState.Tick, 1);
 
-        positionDelta /= ticksToSmooth;
-        rotationDelta = Quaternion.Slerp(Quaternion.identity, rotationDelta, 1f / ticksToSmooth);
+        var newPosition = Vector3.Lerp(Rigidbody.position, Rigidbody.position + positionDelta, NetworkSettings.SyncForce);
+        var newRotation = Quaternion.Slerp(Rigidbody.rotation, rotationDelta * Rigidbody.rotation, NetworkSettings.SyncForce);
 
-        var interpolationValue = (1f / ticksToSmooth) * NetworkSettings.SyncForce;
-
-        var newPosition = GetCorrectedPosition(positionDelta, errorCorrectionType);
-        var newRotation = GetCorrectedRotation(rotationDelta, errorCorrectionType);
-
-        var newVelocity = Vector3.Lerp(Rigidbody.velocity, Rigidbody.velocity + velocityDelta, interpolationValue);
-        var newAngularVelocity = Vector3.Lerp(Rigidbody.angularVelocity, Rigidbody.angularVelocity + angularVelocityDelta, interpolationValue);
+        var newVelocity = Vector3.Lerp(Rigidbody.velocity, Rigidbody.velocity + velocityDelta, NetworkSettings.SyncForce);
+        var newAngularVelocity = Vector3.Lerp(Rigidbody.angularVelocity, Rigidbody.angularVelocity + angularVelocityDelta, NetworkSettings.SyncForce);
 
         Rigidbody.MovePosition(newPosition);
         Rigidbody.MoveRotation(newRotation);
 
-        if (errorCorrectionType == ErrorCorrectionType.SoftSync)
-        {
-            //Rigidbody.velocity = newVelocity;
-            //Rigidbody.angularVelocity = newAngularVelocity;
-        }
-
-        if (errorCorrectionType == ErrorCorrectionType.Continious)
-            return;
-
-        serverState.Position = newPosition;
-        serverState.Rotation = newRotation;
-        serverState.Velocity = newVelocity;
-        serverState.RotationVelocity = newAngularVelocity;
+        //Rigidbody.velocity = newVelocity;
+        //Rigidbody.angularVelocity = newAngularVelocity;
     }
-
-
-    // TODO : refactor this!!!
-    private Vector3 GetCorrectedPosition(Vector3 positionDelta, ErrorCorrectionType correctionType) 
-    {
-        switch (correctionType)
-        {
-            case ErrorCorrectionType.Limited:
-                return Vector3.MoveTowards(Rigidbody.position, Rigidbody.position + positionDelta, NetworkSettings.SyncForce);
-            default:
-                return Vector3.Lerp(Rigidbody.position, Rigidbody.position + positionDelta, NetworkSettings.SyncForce);
-        }
-    }
-
-    private Quaternion GetCorrectedRotation(Quaternion rotationDelta, ErrorCorrectionType correctionType)
-    {
-        switch (correctionType)
-        {
-            case ErrorCorrectionType.Limited:
-                float maxDegrees = 180f;
-                return Quaternion.RotateTowards(Rigidbody.rotation, rotationDelta * Rigidbody.rotation, NetworkSettings.SyncForce * maxDegrees);
-            default:
-                return Quaternion.Slerp(Rigidbody.rotation, rotationDelta * Rigidbody.rotation, NetworkSettings.SyncForce);
-        }
-    }
-
 
     private Vector3 GetDeltaPosition(RigidbodyState serverState, RigidbodyState clientState, ErrorCorrectionType correctionType)
     {
@@ -267,7 +225,7 @@ public class PhysicsObject : Predictable
 
                 var extrapolatedServerPosition = serverState.Position + serverState.Velocity * Time.fixedDeltaTime * ticksToExtrapolate;
 
-                serverStateTransform.position = extrapolatedServerPosition;
+                //serverStateTransform.position = extrapolatedServerPosition;
 
                 return extrapolatedServerPosition - Rigidbody.position;
             default:
@@ -302,7 +260,7 @@ public class PhysicsObject : Predictable
                         deltaRotation * serverState.Rotation;
                 }
 
-                serverStateTransform.rotation = extrapolatedServerRotation;
+                //serverStateTransform.rotation = extrapolatedServerRotation;
 
                 return extrapolatedServerRotation * Quaternion.Inverse(Rigidbody.rotation);
 

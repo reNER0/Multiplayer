@@ -7,12 +7,9 @@
 public enum ErrorCorrectionType
 {
     Extrapolated,
-    Limited,
-    Smoothed,
-    Continious,
     HardSync,
     SoftSync,
-    Velocity,
+    Smoothed,
     None,
 }
 
@@ -27,10 +24,11 @@ public static class NetworkSettings
     // 0 - no smooth sync
     // Choose this value properly.
     // Too small value causes unnecessary reconcilations
-    public static float SyncForce = 0.5f;
+    public static float SyncForce = 0.05f;
 
     // Maximum position delta for reconcilation
-    public static float MaximumError = 5f;
+    public static float MaximumPositionError = 5f;
+    public static int MaximumRotationError = 60;
 
     public static ErrorCorrectionType ClientSidePredictionType = ErrorCorrectionType.Smoothed;
     public static ErrorCorrectionType ErrorCorrectionType = ErrorCorrectionType.SoftSync;
