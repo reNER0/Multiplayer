@@ -14,9 +14,6 @@ public abstract class Predictable : MonoBehaviour
 
     public PlayerInputs lastAppliedInputs;
 
-    //protected PredictableState lastServerState;
-
-
 
 
     protected virtual void Start()
@@ -46,7 +43,6 @@ public abstract class Predictable : MonoBehaviour
     {
         Debug.LogError("Reconcilating!");
 
-        // TODO : make all rigidbodies reconcilation
         LocalStates[state.Tick % 1024] = state;
 
         ApplyState(state);
@@ -96,6 +92,5 @@ public abstract class Predictable : MonoBehaviour
     public virtual void UpdateState(PredictableState state)
     {
         ServerStates[state.Tick % 1024] = state;
-        //lastServerState = state;
     }
 }

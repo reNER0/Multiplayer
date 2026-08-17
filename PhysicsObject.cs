@@ -18,13 +18,6 @@ public class PhysicsObject : Predictable
         OnShowServerStates(NetworkSettings.ShowServerStates);
         NetworkBus.OnShowServerStates += OnShowServerStates;
 
-        if (!NetworkRepository.Current.IsCurrentClientOwnerOfObject(this))
-        {
-            // TODO : Fix this. Commented because of object owner is setting too late
-            //Destroy(serverStateTransform.gameObject);
-            return;
-        }
-
         serverStateTransform.parent = null;
     }
 
