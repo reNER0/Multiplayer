@@ -33,6 +33,7 @@ namespace Assets.Scripts.Network.Commands
 
             // TODO : remove this!!!
             NetworkTime.SetCurrentTick(tick);
+            AdaptiveInterpolation.Reset();
         }
 
         public override string ToString()

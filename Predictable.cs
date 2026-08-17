@@ -91,6 +91,7 @@ public abstract class Predictable : MonoBehaviour
 
     public virtual void UpdateState(PredictableState state)
     {
+        AdaptiveInterpolation.RegisterSnapshot(state.Tick);
         ServerStates[state.Tick % 1024] = state;
     }
 }

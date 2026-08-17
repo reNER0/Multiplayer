@@ -141,8 +141,7 @@ public class PhysicsObject : Predictable
 
     protected virtual void FixedUpdate()
     {
-        // Using old tick to stable interpolation result
-        var interpolateTick = NetworkTime.CurrentTick - Mathf.RoundToInt(NetworkSettings.MaximumPingInTicks * 2f);
+        var interpolateTick = AdaptiveInterpolation.Tick;
         var serverState = GetServerStateAtTick<RigidbodyState>(interpolateTick);
 
         if (serverState == null)
