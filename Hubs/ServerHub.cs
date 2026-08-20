@@ -228,7 +228,7 @@ public class ServerHub : Hub
 
     public static void DisconnectAllClients()
     {
-        foreach (var client in NetworkRepository.Current.ConnectedClients)
+        foreach (var client in NetworkRepository.Current.ConnectedClients.ToArray())
         {
             DisconnectClient(client);
         }
@@ -245,9 +245,13 @@ public class ServerHub : Hub
 
         NetworkBus.OnCommandSendToClient -= SendCommandToClient;
         NetworkBus.OnCommandSendToClients -= SendCommandToAllClients;
+        NetworkBus.OnCommandSendToClientsExcept -= SendCommandToAllClientsExcept;
 
         NetworkBus.OnPerformCommand -= PerformCommand;
 
         tcpListener?.Stop();
+
+        NetworkRepository.Reset();
+        ServerRepository.Reset();
     }
 }

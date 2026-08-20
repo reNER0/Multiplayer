@@ -7,6 +7,8 @@ public static class ServerRepository
 {
     private static List<CommandTimeFrame> _commandsHistory = new List<CommandTimeFrame>();
 
+    public static void Reset() => _commandsHistory.Clear();
+
 
     public static void AddCommandInCommandsTimeline(ICommand cmd)
     {

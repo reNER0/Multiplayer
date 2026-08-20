@@ -34,7 +34,7 @@ public static class NetworkSettings
     public static ErrorCorrectionType ErrorCorrectionType = ErrorCorrectionType.SoftSync;
 
     // Maximum ping in ticks before starting to drop player inputs
-    public static readonly float MaximumPingInTicks = 5;
+    public static readonly float MaximumPingInTicks = 10;
 
     public static readonly int SyncInterval = 3;
 

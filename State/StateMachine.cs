@@ -30,6 +30,9 @@ public class StateMachine : MonoBehaviour
 
     private void OnDestroy()
     {
+        currentState?.OnExit();
+        currentState = null;
+
         NetworkBus.OnStateChanged -= ChangeState;
     }
 }
